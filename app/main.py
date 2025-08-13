@@ -1,7 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Form
-# from fastapi.templating import Jinja2Templates
+from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import subprocess
@@ -16,7 +17,7 @@ from wireguard_manager.database import SessionLocal, engine
 # Create the database tables
 models.Base.metadata.create_all(bind=engine)
 
-# templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="app/template")
 
 CORS_list = os.environ.get('CORS_LIST') or '["http://127.0.0.1","http://10.255.10.1","http://127.0.0.1:11811"]'
 CORS_list = json.loads(CORS_list)
@@ -24,6 +25,7 @@ CORS_list = json.loads(CORS_list)
 print(CORS_list)
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_list,
@@ -333,129 +335,129 @@ def next_ips(server_interface: Optional[str] = None, db: Session = Depends(get_d
     return str(next_ip)
 
 
-# ######################### GUI ############################
+######################### GUI ############################
 
-# ###### modify allowed
-# # Display form to enter username and server interface
-# @app.get("/modify_allowed_ips")
-# def get_modify_allowed_ips_form(request: Request):
-#     return templates.TemplateResponse("modify_allowed_ips.html", {"request": request})
+###### modify allowed
+# Display form to enter username and server interface
+@app.get("/modify_allowed_ips")
+def get_modify_allowed_ips_form(request: Request):
+    return templates.TemplateResponse("modify_allowed_ips.html", {"request": request})
 
-# # Process form and display current allowed IPs for editing
-# @app.post("/modify_allowed_ips")
-# def modify_allowed_ips(request: Request, username: str = Form(...), server_interface: str = Form(...)):
-#     with SessionLocal() as db:
-#         peer = db.query(models.Peer).filter(models.Peer.username == username,
-#                                             models.Peer.server_interface == server_interface).first()
-#         if not peer:
-#             return templates.TemplateResponse("modify_allowed_ips.html", {
-#                 "request": request,
-#                 "error": "Peer not found",
-#                 "username": username,
-#                 "server_interface": server_interface
-#             })
-#         return templates.TemplateResponse("edit_allowed_ips.html", {
-#             "request": request,
-#             "peer": peer
-#         })
+# Process form and display current allowed IPs for editing
+@app.post("/modify_allowed_ips")
+def modify_allowed_ips(request: Request, username: str = Form(...), server_interface: str = Form(...)):
+    with SessionLocal() as db:
+        peer = db.query(models.Peer).filter(models.Peer.username == username,
+                                            models.Peer.server_interface == server_interface).first()
+        if not peer:
+            return templates.TemplateResponse("modify_allowed_ips.html", {
+                "request": request,
+                "error": "Peer not found",
+                "username": username,
+                "server_interface": server_interface
+            })
+        return templates.TemplateResponse("edit_allowed_ips.html", {
+            "request": request,
+            "peer": peer
+        })
 
-# # Update allowed IPs # TO BE UPDATED WITH /peers/{username}/allowed_ips
-# @app.post("/update_allowed_ips")
-# def update_allowed_ips(request: Request, username: str = Form(...), server_interface: str = Form(...), allowed_ips: str = Form(...)):
-#     with SessionLocal() as db:
-#         peer = db.query(models.Peer).filter(models.Peer.username == username,
-#                                             models.Peer.server_interface == server_interface).first()
-#         if not peer:
-#             return templates.TemplateResponse("edit_allowed_ips.html", {
-#                 "request": request,
-#                 "error": "Peer not found",
-#                 "peer": peer
-#             })
-#         if not is_ip_valid(allowed_ips):
-#             return templates.TemplateResponse("edit_allowed_ips.html", {
-#                 "request": request,
-#                 "error": "Invalid allowed IPs",
-#                 "peer": peer
-#             })
-#         peer.allowed_ips = allowed_ips
-#         db.commit()
-#         return RedirectResponse(url="/peers_list", status_code=303)
+# Update allowed IPs # TO BE UPDATED WITH /peers/{username}/allowed_ips
+@app.post("/update_allowed_ips")
+def update_allowed_ips(request: Request, username: str = Form(...), server_interface: str = Form(...), allowed_ips: str = Form(...)):
+    with SessionLocal() as db:
+        peer = db.query(models.Peer).filter(models.Peer.username == username,
+                                            models.Peer.server_interface == server_interface).first()
+        if not peer:
+            return templates.TemplateResponse("edit_allowed_ips.html", {
+                "request": request,
+                "error": "Peer not found",
+                "peer": peer
+            })
+        if not is_ip_valid(allowed_ips):
+            return templates.TemplateResponse("edit_allowed_ips.html", {
+                "request": request,
+                "error": "Invalid allowed IPs",
+                "peer": peer
+            })
+        peer.allowed_ips = allowed_ips
+        db.commit()
+        return RedirectResponse(url="/peers_list", status_code=303)
 
-# ##### list peers
-# @app.get("/peers_list")
-# def list_peers(request: Request):
-#     with SessionLocal() as db:
-#         peers = db.query(models.Peer).all()
-#     return templates.TemplateResponse("peers_list.html", {"request": request, "peers": peers})
-
-
-# ##### Delete peer
-# @app.get("/delete_peer")
-# def delete_peer_confirmation(request: Request, username: str, server_interface: str):
-#     with SessionLocal() as db:
-#         peer = db.query(models.Peer).filter(models.Peer.username == username, models.Peer.server_interface == server_interface).first()
-#         if not peer:
-#             return RedirectResponse(url="/peers_list", status_code=303)
-#         db.delete(peer)
-#         db.commit()
-#     return RedirectResponse(url="/peers_list", status_code=303)
+##### list peers
+@app.get("/peers_list")
+def list_peers(request: Request):
+    with SessionLocal() as db:
+        peers = db.query(models.Peer).all()
+    return templates.TemplateResponse("peers_list.html", {"request": request, "peers": peers})
 
 
-# ##### add peer
-# # Display form to add new peer
-# @app.get("/add_peer")
-# def get_add_peer_form(request: Request):
-#     with SessionLocal() as db:
-#         servers = db.query(models.Server).all()
-#     return templates.TemplateResponse("add_peer.html", {"request": request, "servers": servers})
+##### Delete peer
+@app.get("/delete_peer")
+def delete_peer_confirmation(request: Request, username: str, server_interface: str):
+    with SessionLocal() as db:
+        peer = db.query(models.Peer).filter(models.Peer.username == username, models.Peer.server_interface == server_interface).first()
+        if not peer:
+            return RedirectResponse(url="/peers_list", status_code=303)
+        db.delete(peer)
+        db.commit()
+    return RedirectResponse(url="/peers_list", status_code=303)
 
-# # Process form to add new peer
-# @app.post("/add_peer")
-# def add_peer(request: Request,
-#              username: str = Form(...),
-#              server_interface: str = Form(...),
-#              allowed_ips: str = Form(...),
-#              endpoint: Optional[str] = Form(None),
-#              group: Optional[str] = Form(None),
-#              persistent_keepalive: Optional[int] = Form(None)):
-#     with SessionLocal() as db:
-#         db_server = db.query(models.Server).filter(models.Server.interface == server_interface).first()
-#         if not db_server:
-#             return templates.TemplateResponse("add_peer.html", {
-#                 "request": request,
-#                 "error": "Server not found",
-#                 "servers": db.query(models.Server).all()
-#             })
-#         # Suggest next available private IP
-#         existing_ips = [ipaddress.IPv4Address(peer.private_ip.split('/')[0]) for peer in db_server.peers]
-#         network = ipaddress.IPv4Network(db_server.address, strict=False)
-#         available_ip = None
-#         for ip in network.hosts():
-#             if ip not in existing_ips:
-#                 available_ip = str(ip) + '/' + str(network.prefixlen)
-#                 break
-#         if not available_ip:
-#             return templates.TemplateResponse("add_peer.html", {
-#                 "request": request,
-#                 "error": "No available IP addresses",
-#                 "servers": db.query(models.Server).all()
-#             })
-#         # Create new peer
-#         private_key = generate_private_key()
-#         public_key = generate_public_key(private_key)
-#         preshared_key = generate_preshared_key()
-#         new_peer = models.Peer(
-#             server_interface=server_interface,
-#             username=username,
-#             private_ip=available_ip,
-#             private_key=private_key,
-#             public_key=public_key,
-#             allowed_ips=allowed_ips,
-#             endpoint=endpoint,
-#             group=group,
-#             persistent_keepalive=persistent_keepalive,
-#             preshared_key=preshared_key
-#         )
-#         db.add(new_peer)
-#         db.commit()
-#         return RedirectResponse(url="/peers_list", status_code=303)
+
+##### add peer
+# Display form to add new peer
+@app.get("/add_peer")
+def get_add_peer_form(request: Request):
+    with SessionLocal() as db:
+        servers = db.query(models.Server).all()
+    return templates.TemplateResponse("add_peer.html", {"request": request, "servers": servers})
+
+# Process form to add new peer
+@app.post("/add_peer")
+def add_peer(request: Request,
+             username: str = Form(...),
+             server_interface: str = Form(...),
+             allowed_ips: str = Form(...),
+             endpoint: Optional[str] = Form(None),
+             group: Optional[str] = Form(None),
+             persistent_keepalive: Optional[int] = Form(None)):
+    with SessionLocal() as db:
+        db_server = db.query(models.Server).filter(models.Server.interface == server_interface).first()
+        if not db_server:
+            return templates.TemplateResponse("add_peer.html", {
+                "request": request,
+                "error": "Server not found",
+                "servers": db.query(models.Server).all()
+            })
+        # Suggest next available private IP
+        existing_ips = [ipaddress.IPv4Address(peer.private_ip.split('/')[0]) for peer in db_server.peers]
+        network = ipaddress.IPv4Network(db_server.address, strict=False)
+        available_ip = None
+        for ip in network.hosts():
+            if ip not in existing_ips:
+                available_ip = str(ip) + '/' + str(network.prefixlen)
+                break
+        if not available_ip:
+            return templates.TemplateResponse("add_peer.html", {
+                "request": request,
+                "error": "No available IP addresses",
+                "servers": db.query(models.Server).all()
+            })
+        # Create new peer
+        private_key = generate_private_key()
+        public_key = generate_public_key(private_key)
+        preshared_key = generate_preshared_key()
+        new_peer = models.Peer(
+            server_interface=server_interface,
+            username=username,
+            private_ip=available_ip,
+            private_key=private_key,
+            public_key=public_key,
+            allowed_ips=allowed_ips,
+            endpoint=endpoint,
+            group=group,
+            persistent_keepalive=persistent_keepalive,
+            preshared_key=preshared_key
+        )
+        db.add(new_peer)
+        db.commit()
+        return RedirectResponse(url="/peers_list", status_code=303)

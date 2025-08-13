@@ -3,6 +3,7 @@
 <html>
 <head>
     <title>WireGuard Manager</title>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
     <h1>WireGuard Manager</h1>
@@ -12,6 +13,9 @@
         <a href="/modify_allowed_ips">Modify Allowed IPs</a>
     </nav>
     <hr>
-    {% block content %}{% endblock %}
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+    <script type="text/babel" data-type="module" src="/static/js/main.js"></script>
 </body>
 </html>
