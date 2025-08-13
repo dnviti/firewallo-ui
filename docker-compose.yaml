@@ -1,0 +1,24 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    volumes:
+      - nginx:/etc/nginx
+    ports:
+      - "443:443"  # Espone la porta HTTPS
+      - "80:80"
+
+  fastapi:
+    image: registry.gitlab.com/pietromb/firewallo-ui:0.0.2
+    container_name: firewallo
+    restart: unless-stopped
+    env_file: .env
+    #command: "uvicorn main:app --host 0.0.0.0 --reload"
+    volumes:
+      - db:/usr/src/app/db
+    ports:
+      - 11822:8000
+
+volumes:
+  db:
+  nginx:

@@ -1,0 +1,28 @@
+<!-- templates/peers_list.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>List of Peers</h2>
+<table border="1">
+    <tr>
+        <th>Username</th>
+        <th>Server Interface</th>
+        <th>Private IP</th>
+        <th>Allowed IPs</th>
+        <th>Actions</th>
+    </tr>
+    {% for peer in peers %}
+    <tr>
+        <td>{{ peer.username }}</td>
+        <td>{{ peer.server_interface }}</td>
+        <td>{{ peer.private_ip }}</td>
+        <td>{{ peer.allowed_ips }}</td>
+        <td>
+            <a href="/modify_allowed_ips?username={{ peer.username }}&server_interface={{ peer.server_interface }}">Modify Allowed IPs</a> |
+            <a href="/delete_peer?username={{ peer.username }}&server_interface={{ peer.server_interface }}" onclick="return confirm('Are you sure you want to delete this peer?');">Delete Peer</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+<br>
+<a href="/add_peer">Add New Peer</a>
+{% endblock %}

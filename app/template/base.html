@@ -1,0 +1,17 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WireGuard Manager</title>
+</head>
+<body>
+    <h1>WireGuard Manager</h1>
+    <nav>
+        <a href="/peers_list">Peers List</a> |
+        <a href="/add_peer">Add Peer</a> |
+        <a href="/modify_allowed_ips">Modify Allowed IPs</a>
+    </nav>
+    <hr>
+    {% block content %}{% endblock %}
+</body>
+</html>
