@@ -9,6 +9,10 @@ from pathlib import Path
 import json
 import logging
 
+# Import main application auth components
+from app.auth.models import User as AuthUser, get_current_user
+from app.core.startup import CoreUserRepository
+
 logger = logging.getLogger(__name__)
 
 
@@ -232,7 +236,7 @@ class UserRoleAssignment:
 
 
 class RBACManager:
-    """RBAC management system."""
+    """RBAC management system integrated with main application auth."""
 
     def __init__(self, storage_path: Optional[Path] = None):
         """Initialize RBAC manager."""
@@ -242,12 +246,17 @@ class RBACManager:
         self.assignments: List[UserRoleAssignment] = []
         self._initialized = False
 
+        # Initialize user repository for integration
+        self.user_repo = CoreUserRepository()
+
         # Initialize default permissions
         self._init_default_permissions()
         # Initialize default roles
         self._init_default_roles()
         # Load custom configurations
         self._load_custom_config()
+        # Sync with main application users
+        self._sync_with_main_auth()
 
     def _init_default_permissions(self):
         """Initialize default system permissions."""
@@ -498,13 +507,35 @@ class RBACManager:
         self.save_config()
 
     def get_user_roles(self, user_id: str) -> List[Role]:
-        """Get all active roles for a user."""
+        """Get all active roles for a user, including roles from main auth system."""
         roles = []
+
+        # Get explicit role assignments
         for assignment in self.assignments:
             if assignment.user_id == user_id and assignment.is_active:
                 if not assignment.is_expired():
                     if assignment.role_id in self.roles:
                         roles.append(self.roles[assignment.role_id])
+
+        # Get user from main auth system and map to RBAC roles
+        user_data = self.user_repo.get_user_by_username(user_id)
+        if user_data:
+            user_role = user_data.get("role", "user")
+            is_superuser = user_data.get("is_superuser", False)
+
+            # Map main auth roles to RBAC roles
+            if is_superuser and "super_admin" in self.roles:
+                if not any(r.id == "super_admin" for r in roles):
+                    roles.append(self.roles["super_admin"])
+            elif user_role == "admin" and "admin" in self.roles:
+                if not any(r.id == "admin" for r in roles):
+                    roles.append(self.roles["admin"])
+            elif user_role == "operator" and "operator" in self.roles:
+                if not any(r.id == "operator" for r in roles):
+                    roles.append(self.roles["operator"])
+            elif "viewer" in self.roles:
+                if not any(r.id == "viewer" for r in roles):
+                    roles.append(self.roles["viewer"])
 
         # Sort by priority
         roles.sort(key=lambda r: r.priority)
@@ -521,6 +552,12 @@ class RBACManager:
     def check_permission(self, user_id: str, scope: str, action: str,
                         resource: Optional[str] = None) -> bool:
         """Check if user has permission for scope/action/resource."""
+        # Check if user is superuser in main auth system (always has access)
+        user_data = self.user_repo.get_user_by_username(user_id)
+        if user_data and user_data.get("is_superuser", False):
+            return True
+
+        # Check role-based permissions
         for role in self.get_user_roles(user_id):
             if role.has_permission_for(scope, action, resource):
                 return True
@@ -537,6 +574,86 @@ class RBACManager:
     def get_all_permissions(self) -> List[Permission]:
         """Get all available permissions."""
         return list(self.permissions.values())
+
+    def _sync_with_main_auth(self):
+        """Sync RBAC system with main application auth users."""
+        try:
+            users = self.user_repo.list_users()
+            synced_count = 0
+
+            for user in users:
+                username = user.get("username")
+                user_role = user.get("role", "user")
+
+                if username:
+                    # Check if user has explicit role assignment
+                    has_assignment = any(
+                        a.user_id == username for a in self.assignments
+                    )
+
+                    # If no explicit assignment, create one based on main auth role
+                    if not has_assignment:
+                        role_mapping = {
+                            "admin": "admin",
+                            "operator": "operator",
+                            "user": "viewer"
+                        }
+
+                        rbac_role = role_mapping.get(user_role, "viewer")
+                        if rbac_role in self.roles:
+                            assignment = UserRoleAssignment(
+                                user_id=username,
+                                role_id=rbac_role,
+                                assigned_by="system_sync",
+                                assigned_at=datetime.now().isoformat()
+                            )
+                            self.assignments.append(assignment)
+                            synced_count += 1
+
+            if synced_count > 0:
+                self.save_config()
+                logger.info(f"Synced {synced_count} users with RBAC system")
+
+        except Exception as e:
+            logger.error(f"Failed to sync with main auth system: {e}")
+
+    def sync_user_role(self, username: str):
+        """Sync a specific user's role with main auth system."""
+        try:
+            user_data = self.user_repo.get_user_by_username(username)
+            if not user_data:
+                return False
+
+            user_role = user_data.get("role", "user")
+
+            # Remove existing system-assigned roles
+            self.assignments = [
+                a for a in self.assignments
+                if not (a.user_id == username and a.assigned_by == "system_sync")
+            ]
+
+            # Add new role based on main auth
+            role_mapping = {
+                "admin": "admin",
+                "operator": "operator",
+                "user": "viewer"
+            }
+
+            rbac_role = role_mapping.get(user_role, "viewer")
+            if rbac_role in self.roles:
+                assignment = UserRoleAssignment(
+                    user_id=username,
+                    role_id=rbac_role,
+                    assigned_by="system_sync",
+                    assigned_at=datetime.now().isoformat()
+                )
+                self.assignments.append(assignment)
+                self.save_config()
+                return True
+
+        except Exception as e:
+            logger.error(f"Failed to sync user {username}: {e}")
+        return False
 
 
 # Global RBAC manager instance
@@ -561,7 +678,12 @@ def require_permission(scope: str, action: str, resource: Optional[str] = None):
                 raise PermissionError("Authentication required")
 
             rbac = get_rbac_manager()
-            user_id = getattr(user, 'username', str(user))
+
+            # Handle both User objects and string usernames
+            if isinstance(user, (AuthUser, str)):
+                user_id = getattr(user, 'username', str(user))
+            else:
+                user_id = getattr(user, 'username', str(user))
 
             if not rbac.check_permission(user_id, scope, action, resource):
                 raise PermissionError(
@@ -572,3 +694,23 @@ def require_permission(scope: str, action: str, resource: Optional[str] = None):
             return await func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def check_user_permission(user: AuthUser, scope: str, action: str, resource: Optional[str] = None) -> bool:
+    """Check if a user has a specific permission."""
+    rbac = get_rbac_manager()
+    return rbac.check_permission(user.username, scope, action, resource)
+
+
+def get_user_permissions_list(user: AuthUser) -> List[Dict[str, Any]]:
+    """Get all permissions for a user as a list of dictionaries."""
+    rbac = get_rbac_manager()
+    permissions = rbac.get_user_permissions(user.username)
+    return [p.to_dict() for p in permissions]
+
+
+def get_user_roles_list(user: AuthUser) -> List[Dict[str, Any]]:
+    """Get all roles for a user as a list of dictionaries."""
+    rbac = get_rbac_manager()
+    roles = rbac.get_user_roles(user.username)
+    return [r.to_dict() for r in roles]

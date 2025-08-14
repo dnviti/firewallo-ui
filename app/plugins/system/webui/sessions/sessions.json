@@ -1,0 +1,19 @@
+{
+  "n7SCuQy2GqlFR9SEPsAi3Q7GbWhS4wA4oQHsZk9Aa5M": {
+    "user_id": "admin",
+    "user_data": {
+      "username": "admin",
+      "email": "admin@firewallo.io",
+      "role": "admin",
+      "is_superuser": true,
+      "ip_address": "127.0.0.1",
+      "user_agent": "curl/8.11.1"
+    },
+    "created_at": "2025-08-15T00:08:24.996550",
+    "expires_at": "2025-08-16T00:08:24.996542",
+    "last_activity": "2025-08-15T00:08:25.006939",
+    "ip_address": "127.0.0.1",
+    "user_agent": "curl/8.11.1",
+    "remember_me": false
+  }
+}

@@ -175,6 +175,23 @@
                     <p class="login-subtitle">
                         Please sign in to your Firewallo account
                     </p>
+
+                    <!-- Default Credentials Info -->
+                    <div
+                        class="alert alert-info alert-dismissible fade show"
+                        role="alert"
+                    >
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Default Credentials:</strong><br />
+                        Username: <code>admin</code><br />
+                        Password: <code>admin</code>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Close"
+                        ></button>
+                    </div>
                 </div>
 
                 <!-- Error/Success Messages -->
@@ -204,13 +221,13 @@
                             id="password"
                             placeholder="Password"
                             required
-                            minlength="6"
+                            minlength="4"
                         />
                         <label for="password">
                             <i class="bi bi-lock me-2"></i>Password
                         </label>
                         <div class="invalid-feedback">
-                            Password must be at least 6 characters long.
+                            Password must be at least 4 characters long.
                         </div>
                     </div>
 
@@ -334,9 +351,9 @@
                             "Password is required.",
                         );
                         return false;
-                    } else if (password.length < 6) {
+                    } else if (password.length < 4) {
                         passwordInput.setCustomValidity(
-                            "Password must be at least 6 characters long.",
+                            "Password must be at least 4 characters long.",
                         );
                         return false;
                     } else {

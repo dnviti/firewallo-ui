@@ -84,8 +84,9 @@ api_router.include_router(system.router, prefix="/system", tags=["system"])
 
 # Include GUI routes only if WebUI plugin is not loaded
 # (WebUI plugin will handle these routes if it's active)
-if not webui_plugin_loaded:
-    app.include_router(gui.router)
+# TEMPORARILY DISABLED TO FORCE WEBUI PLUGIN AUTHENTICATION
+# if not webui_plugin_loaded:
+#     app.include_router(gui.router)
 
 # Function to configure WebUI plugin if loaded
 async def configure_webui_plugin():
@@ -113,11 +114,12 @@ async def configure_webui_plugin():
                 if plugin_routes:
                     for router in plugin_routes:
                         # WebUI web routes go directly to app, API routes go to api_router
-                        if hasattr(router, 'tags') and 'webui' in router.tags:
-                            app.include_router(router)
-                            logger.info("Registered WebUI web routes")
-                        elif hasattr(router, 'tags') and 'webui-api' in router.tags:
-                            # Already has prefix in the router definition
+                        # Register all WebUI plugin routes to ensure authentication works
+                        app.include_router(router)
+                        logger.info(f"Registered WebUI routes: {router}")
+
+                        # Also register API routes if they have specific tags
+                        if hasattr(router, 'prefix') and router.prefix and '/api/' in router.prefix:
                             api_router.include_router(router)
                             logger.info("Registered WebUI API routes")
 
@@ -179,6 +181,8 @@ async def register_routes():
         if webui_plugin_loaded:
             # The WebUI plugin will handle all web routes
             logger.info("WebUI plugin is active - using plugin-provided web interface")
+        else:
+            logger.warning("WebUI plugin not loaded - web interface may not have authentication!")
 
         registered_count = register_plugin_routes()
         if registered_count > 0:
