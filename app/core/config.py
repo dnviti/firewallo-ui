@@ -12,7 +12,10 @@ def build_cors_list() -> list[str]:
         return ["*"]
 
 def create_app() -> FastAPI:
-    app = FastAPI()
+    app = FastAPI(
+        docs_url="/api/docs",
+        redoc_url="/api/redoc"
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=build_cors_list(),

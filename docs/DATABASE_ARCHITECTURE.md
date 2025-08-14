@@ -18,8 +18,17 @@ The plugins section contains all plugin-related data, organized by plugin type a
   "plugins": {
     "vpn": {
       "wireguard": {
-        "servers": [...],
-        "peers": [...]
+        "servers": [
+          {
+            "interface": "wg0",
+            "private_key": "...",
+            "public_key": "...",
+            "listen_port": 51820,
+            "address": "10.0.0.1/24",
+            "mtu": 1420,
+            "peers": [...]
+          }
+        ]
       }
     }
   }
@@ -33,8 +42,7 @@ The plugins section contains all plugin-related data, organized by plugin type a
 - **Path**: `plugins.vpn.wireguard`
 - **Purpose**: Stores WireGuard VPN server and peer configurations
 - **Sub-sections**:
-  - `servers`: Array of WireGuard server configurations
-  - `peers`: Array of WireGuard peer configurations
+  - `servers`: Array of WireGuard server configurations, each containing their associated peers
 
 **Server Document Schema**:
 ```json
@@ -44,11 +52,12 @@ The plugins section contains all plugin-related data, organized by plugin type a
   "public_key": "string",
   "listen_port": "number",
   "address": "string",
-  "mtu": "number"
+  "mtu": "number",
+  "peers": [...]
 }
 ```
 
-**Peer Document Schema**:
+**Peer Document Schema** (nested within server):
 ```json
 {
   "username": "string",
@@ -179,8 +188,17 @@ python -m app.db.migration app/db/metadata.json
   "plugins": {
     "vpn": {
       "wireguard": {
-        "servers": [...],
-        "peers": [...]
+        "servers": [
+          {
+            "interface": "wg0",
+            "private_key": "...",
+            "public_key": "...",
+            "listen_port": 51820,
+            "address": "10.0.0.1/24",
+            "mtu": 1420,
+            "peers": [...]
+          }
+        ]
       }
     }
   },
@@ -218,8 +236,9 @@ from app.wireguard_manager.repository import repo
 # Access WireGuard servers (plugins.vpn.wireguard.servers)
 servers = repo.list_servers()
 
-# Access WireGuard peers (plugins.vpn.wireguard.peers)  
-peers = repo.list_peers()
+# Access WireGuard peers for a specific server
+for server in servers:
+    peers = server.get('peers', [])
 
 # Access users (auth.users)
 users = repo.list_users()
