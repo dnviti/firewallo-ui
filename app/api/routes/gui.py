@@ -2,13 +2,14 @@ from __future__ import annotations
 from typing import Optional
 import ipaddress
 from fastapi import APIRouter, Depends, Request, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from app.wireguard_manager import models
 from app.wireguard_manager.repository import repo, PeerDoc
 from app.users.users import current_active_user
 from app.services import wireguard
 from app.core.validators import is_ip_valid
+import base64
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter(tags=["gui"])
@@ -78,3 +79,23 @@ def add_peer(request: Request, username: str = Form(...), server_interface: str 
     except ValueError as e:
         return templates.TemplateResponse("add_peer.html", {"request": request, "error": str(e), "servers": repo.list_servers()})
     return RedirectResponse(url="/peers_list", status_code=303)
+
+# SPA entry routes (React front-end). Multiple paths serve the same shell enabling deep links.
+@router.get("/", include_in_schema=False)
+@router.get("/login", include_in_schema=False)
+# Legacy wireguard paths (backward compatibility)
+@router.get("/peers", include_in_schema=False)
+@router.get("/peers/{rest:path}", include_in_schema=False)
+# New plugin namespace for WireGuard UI
+@router.get("/plugins/wireguard", include_in_schema=False)
+@router.get("/plugins/wireguard/{rest:path}", include_in_schema=False)
+def spa_index(request: Request, rest: str | None = None):  # auth handled client side via JWT; API still enforces auth
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@router.get('/favicon.ico', include_in_schema=False)
+def favicon():
+    # Lightweight ICO (16x16) embedded as binary; generated from SVG concept.
+    ico_bytes = base64.b64decode(
+        b'AAABAAEAEBAQAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAQAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8AAAAAAAAAAP///wD09PQA7OzsgN/f35Df39+Q39/fkN/f35Df39+Q39/fkN/f35Df39+Q39/fkN/f35Df39+Q7+/vwP///wAAAAAA////AOvr6wCbm5uAmZmZkJmZmZCZmpqQmZmZkJmZmZCZmpqQmZmZkJmZmZCZmpqQmZmZkJubm4Dq6usA////AAAAAAD///8A7e3tAJmZmYCFhYV/hYWFf4WFhX+FhYV/hYWFf4WFhX+FhYV/hYWFf4WFhX+FhYV/iYmJgO3t7QD///8AAAAAAP///wDt7e0AmZmZgIWFhX+Hh4d/h4eHf4eHh3+Hh4d/h4eHf4eHh3+Hh4d/h4eHf4eHh3+KiopA7e3tAP///wAAAAAA////AO/v7wCsqqqAjIyMf4yMjH+MjIx/jIyMf4yMjH+MjIx/jIyMf4yMjH+MjIx/jIyMf46OjoDv7+8A////AAAAAAD///8A////AObm5gCtq6uArKysgKysrICsrKyArKysgKysrICsrKyArKysgKysrICsrKyAqqqqgP///wD///8AAAAAAP///wD///8A////AOnp6QDu7u7A6enpwOnp6cDp6enA6enpwOnp6cDp6enA6enpwOnp6cDo6OgA////AP///wAAAAAA////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AAAAAAD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+    )
+    return Response(content=ico_bytes, media_type='image/x-icon')

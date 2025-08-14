@@ -12,7 +12,7 @@ def is_ip_valid(ip_str: str) -> bool:
                     mask = int(ip.split("/")[1])
                 except ValueError:
                     return False
-                if mask > 32 or mask < 1:
+                if mask > 32 or mask < 0:
                     return False
                 ip = ip.split("/")[0]
             ipaddress.ip_address(ip)

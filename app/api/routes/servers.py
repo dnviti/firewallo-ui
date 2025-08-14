@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from app.wireguard_manager import models, schemas
 from app.wireguard_manager.repository import repo, ServerDoc
 from app.users.users import current_active_user
+from typing import List
 from app.services import wireguard
 from app.core.validators import is_ip_valid
 
@@ -54,3 +55,8 @@ def persist_server_config(server_interface: str, user: models.User = Depends(cur
     with open(filename, "w", encoding="utf-8") as f:
         f.write(conf_content)
     return FileResponse(filename, media_type="text/plain", filename=filename)
+
+@router.get("/", response_model=List[schemas.Server])
+def list_servers(user: models.User = Depends(current_active_user)):
+    servers = repo.list_servers()
+    return [schemas.Server(interface=s.interface, listen_port=s.listen_port, address=s.address, mtu=s.mtu, public_key=s.public_key) for s in servers]

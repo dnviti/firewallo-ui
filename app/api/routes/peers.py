@@ -1,6 +1,6 @@
 from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from typing import List, Optional
 import ipaddress
 from app.wireguard_manager import models, schemas
@@ -13,19 +13,64 @@ router = APIRouter(tags=["peers"])
 
 @router.post("/servers/{server_interface}/peers/", response_model=schemas.PeerCreateResponse)
 def create_peer_for_server(server_interface: str, peer: schemas.PeerCreate, user: models.User = Depends(current_active_user)):
-    if not repo.get_server(server_interface):
+    """Create a peer.
+    If peer.private_ip is blank or the literal 'auto', the next available IP within the server network is assigned.
+    'allowed_ips' may use 0.0.0.0/0 but private_ip cannot.
+    """
+    server_doc = repo.get_server(server_interface)
+    if not server_doc:
         raise HTTPException(status_code=404, detail="Server not found")
-    private_key = wireguard.generate_private_key()
-    public_key = wireguard.generate_public_key(private_key)
-    preshared_key = wireguard.generate_preshared_key()
-    if not is_ip_valid(peer.allowed_ips) or not is_ip_valid(peer.private_ip):
-        raise HTTPException(status_code=400, detail="IP error")
-    doc = PeerDoc(server_interface=server_interface, username=peer.username, private_ip=peer.private_ip, private_key=private_key, public_key=public_key, allowed_ips=peer.allowed_ips, endpoint=peer.endpoint, group=peer.group, persistent_keepalive=peer.persistent_keepalive, preshared_key=preshared_key)
+
+    private_key, public_key, preshared_key = _generate_keys()
+    desired_private_ip = _resolve_private_ip(server_doc, server_interface, peer.private_ip)
+    _validate_peer_ips(desired_private_ip, peer.allowed_ips)
+
+    doc = PeerDoc(server_interface=server_interface, username=peer.username, private_ip=desired_private_ip, private_key=private_key, public_key=public_key, allowed_ips=peer.allowed_ips, endpoint=peer.endpoint, group=peer.group, persistent_keepalive=peer.persistent_keepalive, preshared_key=preshared_key)
     try:
         repo.create_peer(doc)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return schemas.PeerCreateResponse(username=doc.username, server_interface=doc.server_interface, private_ip=doc.private_ip, allowed_ips=doc.allowed_ips, endpoint=doc.endpoint or "", group=doc.group or "", persistent_keepalive=doc.persistent_keepalive, public_key=doc.public_key, preshared_key=doc.preshared_key, private_key=private_key)
+
+
+def _generate_keys():
+    private_key = wireguard.generate_private_key()
+    public_key = wireguard.generate_public_key(private_key)
+    preshared_key = wireguard.generate_preshared_key()
+    return private_key, public_key, preshared_key
+
+
+def _resolve_private_ip(server_doc, server_interface: str, requested: str) -> str:
+    requested = (requested or '').strip()
+    if requested and requested.lower() != 'auto':
+        return requested
+    try:
+        network = ipaddress.ip_network(server_doc.address, strict=False)
+    except ValueError:
+        raise HTTPException(status_code=500, detail="Server address invalid; cannot allocate IP")
+    existing_ips = {p.private_ip.split('/')[0] for p in repo.list_peers(server_interface)}
+    for host in network.hosts():
+        if str(host) not in existing_ips:
+            return f"{host}/{network.prefixlen}"
+    raise HTTPException(status_code=409, detail="No available private IPs in server network")
+
+
+def _validate_peer_ips(private_ip: str, allowed_ips: str) -> None:
+    errors = []
+    if not is_ip_valid(private_ip):
+        errors.append("private_ip is invalid (expected IPv4 address optionally with /CIDR 1-32, e.g. 10.0.0.5/32)")
+    else:
+        if '/' in private_ip:
+            try:
+                m = int(private_ip.split('/')[1])
+                if m == 0:
+                    errors.append("private_ip mask /0 not allowed; use 1-32")
+            except ValueError:
+                errors.append("private_ip CIDR mask invalid")
+    if not is_ip_valid(allowed_ips):
+        errors.append("allowed_ips is invalid (expected comma-separated IPv4 or IPv4/CIDR entries, e.g. 10.0.0.5/32,10.0.0.0/24,0.0.0.0/0)")
+    if errors:
+        raise HTTPException(status_code=400, detail="; ".join(errors))
 
 @router.put("/servers/{server_interface}/peers/{peer_username}", response_model=schemas.Peer)
 def update_peer(server_interface: str, peer_username: str, peer: schemas.PeerUpdate, user: models.User = Depends(current_active_user)):
@@ -71,18 +116,41 @@ def update_peer_allowed_ips(username: str, allowed_ips: str, user: models.User =
     if not existing:
         raise HTTPException(status_code=404, detail="Peer not found")
     if not is_ip_valid(allowed_ips):
-        raise HTTPException(status_code=400, detail="IP error")
+        raise HTTPException(status_code=400, detail="allowed_ips is invalid (expected comma-separated IPv4 or IPv4/CIDR entries 0-32, e.g. 10.0.0.5/32,10.0.0.0/24,0.0.0.0/0)")
     updated = repo.update_peer(existing.server_interface, username, allowed_ips=allowed_ips)
     return schemas.Peer(username=updated.username, server_interface=updated.server_interface, private_ip=updated.private_ip, allowed_ips=updated.allowed_ips, endpoint=updated.endpoint or "", group=updated.group or "", persistent_keepalive=updated.persistent_keepalive, public_key=updated.public_key, preshared_key=updated.preshared_key)
 
 @router.get("/next_ip")
 def next_ips(server_interface: Optional[str] = None, user: models.User = Depends(current_active_user)):
     peers = repo.list_peers(server_interface)
-    ip_list = [p.private_ip.split('/')[0] for p in peers]
-    if not ip_list:
+    used_ips = {p.private_ip.split('/')[0] for p in peers}
+    if not used_ips:
+        return PlainTextResponse(_first_ip_when_empty(server_interface))
+    return PlainTextResponse(_increment_ip(used_ips))
+
+
+def _first_ip_when_empty(server_interface: Optional[str]) -> str:
+    if not server_interface:
         return ""
-    ordered_ips = sorted(ip_list, key=ipaddress.ip_address)
-    ip_max = ipaddress.ip_address(ordered_ips[-1])
+    srv = repo.get_server(server_interface)
+    if not srv:
+        return ""
+    try:
+        net = ipaddress.ip_network(srv.address, strict=False)
+        server_ip = srv.address.split('/')[0]
+    except ValueError:
+        return ""
+    for host in net.hosts():
+        h = str(host)
+        if h == server_ip or h.endswith('.0') or h.endswith('.255'):
+            continue
+        return h
+    return ""
+
+
+def _increment_ip(used_ips: set[str]) -> str:
+    ordered = sorted(used_ips, key=ipaddress.ip_address)
+    ip_max = ipaddress.ip_address(ordered[-1])
     next_ip = ip_max + 1
     while str(next_ip).endswith('.0') or str(next_ip).endswith('.1') or str(next_ip).endswith('.255'):
         next_ip += 1
