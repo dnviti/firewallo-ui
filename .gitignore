@@ -85,3 +85,7 @@ docker-compose.override.yml
 *.pid
 *.DS_Store
 data/
+*.txt
+*.log
+*.log.*
+*.log.*

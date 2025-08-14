@@ -1,24 +1,25 @@
-{% extends "base.html" %}
-
-{% block title %}Dashboard - Firewallo UI{% endblock %}
-
-{% block page_title %}Dashboard{% endblock %}
-
-{% block page_actions %}
+{% extends "base.html" %} {% block title %}Dashboard - Firewallo UI{% endblock
+%} {% block page_title %}Dashboard{% endblock %} {% block page_actions %}
 <div class="btn-group" role="group">
-    <button type="button" class="btn btn-outline-primary btn-sm" onclick="refreshDashboard()">
+    <button
+        type="button"
+        class="btn btn-outline-primary btn-sm"
+        onclick="refreshDashboard()"
+    >
         <i class="bi bi-arrow-clockwise me-1"></i>
         Refresh
     </button>
-    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#settingsModal">
+    <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        data-bs-toggle="modal"
+        data-bs-target="#settingsModal"
+    >
         <i class="bi bi-gear me-1"></i>
         Settings
     </button>
 </div>
-{% endblock %}
-
-{% block content %}
-{{ super() }}
+{% endblock %} {% block content %} {{ super() }}
 
 <!-- Status Cards Row -->
 <div class="row mb-4">
@@ -27,7 +28,9 @@
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                        <div
+                            class="text-xs font-weight-bold text-success text-uppercase mb-1"
+                        >
                             Firewall Status
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
@@ -50,11 +53,14 @@
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                        <div
+                            class="text-xs font-weight-bold text-info text-uppercase mb-1"
+                        >
                             Active Plugins
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            <span id="active-plugins-count">0</span> / <span id="total-plugins-count">0</span>
+                            <span id="active-plugins-count">0</span> /
+                            <span id="total-plugins-count">0</span>
                         </div>
                     </div>
                     <div class="col-auto">
@@ -70,19 +76,27 @@
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                        <div
+                            class="text-xs font-weight-bold text-warning text-uppercase mb-1"
+                        >
                             CPU Usage
                         </div>
                         <div class="row no-gutters align-items-center">
                             <div class="col-auto">
-                                <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
+                                <div
+                                    class="h5 mb-0 mr-3 font-weight-bold text-gray-800"
+                                >
                                     <span id="cpu-usage">0</span>%
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="progress progress-sm mr-2">
-                                    <div class="progress-bar bg-warning" role="progressbar"
-                                         style="width: 0%" id="cpu-progress"></div>
+                                    <div
+                                        class="progress-bar bg-warning"
+                                        role="progressbar"
+                                        style="width: 0%"
+                                        id="cpu-progress"
+                                    ></div>
                                 </div>
                             </div>
                         </div>
@@ -100,19 +114,27 @@
             <div class="card-body">
                 <div class="row no-gutters align-items-center">
                     <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                        <div
+                            class="text-xs font-weight-bold text-primary text-uppercase mb-1"
+                        >
                             Memory Usage
                         </div>
                         <div class="row no-gutters align-items-center">
                             <div class="col-auto">
-                                <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">
+                                <div
+                                    class="h5 mb-0 mr-3 font-weight-bold text-gray-800"
+                                >
                                     <span id="memory-usage">0</span>%
                                 </div>
                             </div>
                             <div class="col">
                                 <div class="progress progress-sm mr-2">
-                                    <div class="progress-bar bg-primary" role="progressbar"
-                                         style="width: 0%" id="memory-progress"></div>
+                                    <div
+                                        class="progress-bar bg-primary"
+                                        role="progressbar"
+                                        style="width: 0%"
+                                        id="memory-progress"
+                                    ></div>
                                 </div>
                             </div>
                         </div>
@@ -150,22 +172,54 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td><small class="text-muted">2024-01-15 14:30:25</small></td>
-                                <td><span class="badge bg-info">Plugin</span></td>
+                                <td>
+                                    <small class="text-muted"
+                                        >2024-01-15 14:30:25</small
+                                    >
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">Plugin</span>
+                                </td>
                                 <td>DDoS Protection plugin enabled</td>
-                                <td><span class="badge bg-success">Success</span></td>
+                                <td>
+                                    <span class="badge bg-success"
+                                        >Success</span
+                                    >
+                                </td>
                             </tr>
                             <tr>
-                                <td><small class="text-muted">2024-01-15 14:28:12</small></td>
-                                <td><span class="badge bg-warning">Rule</span></td>
+                                <td>
+                                    <small class="text-muted"
+                                        >2024-01-15 14:28:12</small
+                                    >
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning">Rule</span>
+                                </td>
                                 <td>New firewall rule added for port 8080</td>
-                                <td><span class="badge bg-success">Success</span></td>
+                                <td>
+                                    <span class="badge bg-success"
+                                        >Success</span
+                                    >
+                                </td>
                             </tr>
                             <tr>
-                                <td><small class="text-muted">2024-01-15 14:25:08</small></td>
-                                <td><span class="badge bg-secondary">System</span></td>
+                                <td>
+                                    <small class="text-muted"
+                                        >2024-01-15 14:25:08</small
+                                    >
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary"
+                                        >System</span
+                                    >
+                                </td>
                                 <td>System startup completed</td>
-                                <td><span class="badge bg-success">Success</span></td>
+                                <td>
+                                    <span class="badge bg-success"
+                                        >Success</span
+                                    >
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -185,28 +239,40 @@
             </div>
             <div class="card-body">
                 <div class="list-group list-group-flush">
-                    <a href="/plugins" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <a
+                        href="/plugins"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <i class="bi bi-puzzle me-2 text-primary"></i>
                             Manage Plugins
                         </div>
                         <i class="bi bi-chevron-right"></i>
                     </a>
-                    <a href="/rules" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <a
+                        href="/rules"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <i class="bi bi-list-ul me-2 text-warning"></i>
                             View Firewall Rules
                         </div>
                         <i class="bi bi-chevron-right"></i>
                     </a>
-                    <a href="/logs" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <a
+                        href="/logs"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <i class="bi bi-file-text me-2 text-info"></i>
                             Check Logs
                         </div>
                         <i class="bi bi-chevron-right"></i>
                     </a>
-                    <a href="/backup" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <a
+                        href="/backup"
+                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <i class="bi bi-download me-2 text-success"></i>
                             Create Backup
@@ -229,29 +295,42 @@
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
                         <span class="small">Uptime</span>
-                        <span class="small font-weight-bold" id="uptime">0 days, 0 hours</span>
+                        <span class="small font-weight-bold" id="uptime"
+                            >0 days, 0 hours</span
+                        >
                     </div>
                 </div>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
                         <span class="small">Load Average</span>
-                        <span class="small font-weight-bold" id="load-avg">0.0</span>
+                        <span class="small font-weight-bold" id="load-avg"
+                            >0.0</span
+                        >
                     </div>
                 </div>
                 <div class="mb-3">
                     <div class="d-flex justify-content-between">
                         <span class="small">Disk Usage</span>
-                        <span class="small font-weight-bold" id="disk-usage">0%</span>
+                        <span class="small font-weight-bold" id="disk-usage"
+                            >0%</span
+                        >
                     </div>
-                    <div class="progress mt-1" style="height: 5px;">
-                        <div class="progress-bar bg-info" role="progressbar"
-                             style="width: 0%" id="disk-progress"></div>
+                    <div class="progress mt-1" style="height: 5px">
+                        <div
+                            class="progress-bar bg-info"
+                            role="progressbar"
+                            style="width: 0%"
+                            id="disk-progress"
+                        ></div>
                     </div>
                 </div>
                 <div>
                     <div class="d-flex justify-content-between">
                         <span class="small">Network I/O</span>
-                        <span class="small font-weight-bold text-success" id="network-io">
+                        <span
+                            class="small font-weight-bold text-success"
+                            id="network-io"
+                        >
                             <i class="bi bi-arrow-up"></i> 0 KB/s
                             <i class="bi bi-arrow-down ms-2"></i> 0 KB/s
                         </span>
@@ -268,7 +347,11 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Dashboard Settings</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                ></button>
             </div>
             <div class="modal-body">
                 <form>
@@ -283,15 +366,28 @@
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="show-notifications" checked>
-                            <label class="form-check-label" for="show-notifications">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="show-notifications"
+                                checked
+                            />
+                            <label
+                                class="form-check-label"
+                                for="show-notifications"
+                            >
                                 Show notifications
                             </label>
                         </div>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="sound-alerts" checked>
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="sound-alerts"
+                                checked
+                            />
                             <label class="form-check-label" for="sound-alerts">
                                 Sound alerts
                             </label>
@@ -300,172 +396,212 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="saveDashboardSettings()">Save Settings</button>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                >
+                    Close
+                </button>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="saveDashboardSettings()"
+                >
+                    Save Settings
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script>
-let refreshInterval;
+    let refreshInterval;
 
-// Initialize dashboard
-document.addEventListener('DOMContentLoaded', function() {
-    loadDashboardData();
-    startAutoRefresh();
-});
+    // Initialize dashboard
+    document.addEventListener("DOMContentLoaded", function () {
+        loadDashboardData();
+        startAutoRefresh();
+    });
 
-// Load dashboard data from API
-async function loadDashboardData() {
-    try {
-        // System stats
-        const systemResponse = await fetch('/api/system/stats');
-        if (systemResponse.ok) {
-            const systemData = await systemResponse.json();
-            updateSystemStats(systemData);
+    // Load dashboard data from API
+    async function loadDashboardData() {
+        try {
+            // System stats
+            const systemResponse = await fetch("/api/system/stats", {
+                credentials: "include",
+            });
+            if (systemResponse.ok) {
+                const systemData = await systemResponse.json();
+                updateSystemStats(systemData);
+            }
+
+            // Plugin stats
+            const pluginsResponse = await fetch("/api/plugins/", {
+                credentials: "include",
+            });
+            if (pluginsResponse.ok) {
+                const data = await pluginsResponse.json();
+                // Convert plugins object to array format expected by the UI
+                const pluginsData = Object.entries(data.plugins || {}).map(
+                    ([key, plugin]) => ({
+                        ...plugin,
+                        name: key,
+                    }),
+                );
+                updatePluginStats(pluginsData);
+            }
+
+            // Recent activity
+            const activityResponse = await fetch("/api/activity/recent", {
+                credentials: "include",
+            });
+            if (activityResponse.ok) {
+                const activityData = await activityResponse.json();
+                updateActivityTable(activityData);
+            }
+        } catch (error) {
+            console.error("Error loading dashboard data:", error);
+        }
+    }
+
+    // Update system statistics
+    function updateSystemStats(data) {
+        if (data.cpu_usage !== undefined) {
+            document.getElementById("cpu-usage").textContent = Math.round(
+                data.cpu_usage,
+            );
+            document.getElementById("cpu-progress").style.width =
+                data.cpu_usage + "%";
         }
 
-        // Plugin stats
-        const pluginsResponse = await fetch('/api/plugins/');
-        if (pluginsResponse.ok) {
-            const pluginsData = await pluginsResponse.json();
-            updatePluginStats(pluginsData);
+        if (data.memory_usage !== undefined) {
+            document.getElementById("memory-usage").textContent = Math.round(
+                data.memory_usage,
+            );
+            document.getElementById("memory-progress").style.width =
+                data.memory_usage + "%";
         }
 
-        // Recent activity
-        const activityResponse = await fetch('/api/activity/recent');
-        if (activityResponse.ok) {
-            const activityData = await activityResponse.json();
-            updateActivityTable(activityData);
+        if (data.uptime) {
+            document.getElementById("uptime").textContent = data.uptime;
         }
-    } catch (error) {
-        console.error('Error loading dashboard data:', error);
-    }
-}
 
-// Update system statistics
-function updateSystemStats(data) {
-    if (data.cpu_usage !== undefined) {
-        document.getElementById('cpu-usage').textContent = Math.round(data.cpu_usage);
-        document.getElementById('cpu-progress').style.width = data.cpu_usage + '%';
-    }
+        if (data.load_average !== undefined) {
+            document.getElementById("load-avg").textContent =
+                data.load_average.toFixed(2);
+        }
 
-    if (data.memory_usage !== undefined) {
-        document.getElementById('memory-usage').textContent = Math.round(data.memory_usage);
-        document.getElementById('memory-progress').style.width = data.memory_usage + '%';
-    }
+        if (data.disk_usage !== undefined) {
+            document.getElementById("disk-usage").textContent =
+                Math.round(data.disk_usage) + "%";
+            document.getElementById("disk-progress").style.width =
+                data.disk_usage + "%";
+        }
 
-    if (data.uptime) {
-        document.getElementById('uptime').textContent = data.uptime;
-    }
-
-    if (data.load_average !== undefined) {
-        document.getElementById('load-avg').textContent = data.load_average.toFixed(2);
-    }
-
-    if (data.disk_usage !== undefined) {
-        document.getElementById('disk-usage').textContent = Math.round(data.disk_usage) + '%';
-        document.getElementById('disk-progress').style.width = data.disk_usage + '%';
-    }
-
-    if (data.network_io) {
-        document.getElementById('network-io').innerHTML = `
+        if (data.network_io) {
+            document.getElementById("network-io").innerHTML = `
             <i class="bi bi-arrow-up"></i> ${formatBytes(data.network_io.up)}/s
             <i class="bi bi-arrow-down ms-2"></i> ${formatBytes(data.network_io.down)}/s
         `;
+        }
     }
-}
 
-// Update plugin statistics
-function updatePluginStats(data) {
-    const activeCount = data.filter(p => p.enabled).length;
-    const totalCount = data.length;
+    // Update plugin statistics
+    function updatePluginStats(data) {
+        const activeCount = data.filter((p) => p.enabled).length;
+        const totalCount = data.length;
 
-    document.getElementById('active-plugins-count').textContent = activeCount;
-    document.getElementById('total-plugins-count').textContent = totalCount;
-}
+        document.getElementById("active-plugins-count").textContent =
+            activeCount;
+        document.getElementById("total-plugins-count").textContent = totalCount;
+    }
 
-// Update activity table
-function updateActivityTable(activities) {
-    const tbody = document.querySelector('#activity-table tbody');
-    tbody.innerHTML = '';
+    // Update activity table
+    function updateActivityTable(activities) {
+        const tbody = document.querySelector("#activity-table tbody");
+        tbody.innerHTML = "";
 
-    activities.forEach(activity => {
-        const row = tbody.insertRow();
-        row.innerHTML = `
+        activities.forEach((activity) => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
             <td><small class="text-muted">${formatDateTime(activity.timestamp)}</small></td>
             <td><span class="badge bg-${getBadgeColor(activity.type)}">${activity.type}</span></td>
             <td>${activity.description}</td>
-            <td><span class="badge bg-${activity.status === 'success' ? 'success' : 'danger'}">${activity.status}</span></td>
+            <td><span class="badge bg-${activity.status === "success" ? "success" : "danger"}">${activity.status}</span></td>
         `;
-    });
-}
-
-// Utility functions
-function formatBytes(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-}
-
-function formatDateTime(timestamp) {
-    return new Date(timestamp).toLocaleString();
-}
-
-function getBadgeColor(type) {
-    const colors = {
-        'plugin': 'info',
-        'rule': 'warning',
-        'system': 'secondary',
-        'security': 'danger'
-    };
-    return colors[type.toLowerCase()] || 'primary';
-}
-
-// Auto-refresh functionality
-function startAutoRefresh() {
-    const interval = parseInt(localStorage.getItem('dashboard-refresh-interval') || '60');
-    if (interval > 0) {
-        refreshInterval = setInterval(loadDashboardData, interval * 1000);
+        });
     }
-}
 
-function refreshDashboard() {
-    loadDashboardData();
-}
-
-function saveDashboardSettings() {
-    const interval = document.getElementById('refresh-interval').value;
-    const showNotifications = document.getElementById('show-notifications').checked;
-    const soundAlerts = document.getElementById('sound-alerts').checked;
-
-    localStorage.setItem('dashboard-refresh-interval', interval);
-    localStorage.setItem('dashboard-show-notifications', showNotifications);
-    localStorage.setItem('dashboard-sound-alerts', soundAlerts);
-
-    // Restart auto-refresh with new interval
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
+    // Utility functions
+    function formatBytes(bytes) {
+        if (bytes === 0) return "0 B";
+        const k = 1024;
+        const sizes = ["B", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
     }
-    startAutoRefresh();
 
-    // Close modal
-    bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+    function formatDateTime(timestamp) {
+        return new Date(timestamp).toLocaleString();
+    }
 
-    // Show success message
-    const alertDiv = document.createElement('div');
-    alertDiv.className = 'alert alert-success alert-dismissible fade show';
-    alertDiv.innerHTML = `
+    function getBadgeColor(type) {
+        const colors = {
+            plugin: "info",
+            rule: "warning",
+            system: "secondary",
+            security: "danger",
+        };
+        return colors[type.toLowerCase()] || "primary";
+    }
+
+    // Auto-refresh functionality
+    function startAutoRefresh() {
+        const interval = parseInt(
+            localStorage.getItem("dashboard-refresh-interval") || "60",
+        );
+        if (interval > 0) {
+            refreshInterval = setInterval(loadDashboardData, interval * 1000);
+        }
+    }
+
+    function refreshDashboard() {
+        loadDashboardData();
+    }
+
+    function saveDashboardSettings() {
+        const interval = document.getElementById("refresh-interval").value;
+        const showNotifications =
+            document.getElementById("show-notifications").checked;
+        const soundAlerts = document.getElementById("sound-alerts").checked;
+
+        localStorage.setItem("dashboard-refresh-interval", interval);
+        localStorage.setItem("dashboard-show-notifications", showNotifications);
+        localStorage.setItem("dashboard-sound-alerts", soundAlerts);
+
+        // Restart auto-refresh with new interval
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+        startAutoRefresh();
+
+        // Close modal
+        bootstrap.Modal.getInstance(
+            document.getElementById("settingsModal"),
+        ).hide();
+
+        // Show success message
+        const alertDiv = document.createElement("div");
+        alertDiv.className = "alert alert-success alert-dismissible fade show";
+        alertDiv.innerHTML = `
         Settings saved successfully!
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    document.querySelector('main').insertBefore(alertDiv, document.querySelector('.pt-3'));
-}
+        document
+            .querySelector("main")
+            .insertBefore(alertDiv, document.querySelector(".pt-3"));
+    }
 </script>
 {% endblock %}

@@ -220,6 +220,7 @@
                             type="checkbox"
                             value=""
                             id="remember-me"
+                            checked
                         />
                         <label class="form-check-label" for="remember-me">
                             Remember me for 30 days
@@ -374,10 +375,13 @@
                                 "success",
                             );
 
-                            // Store token if remember me is checked
-                            if (rememberMe && result.access_token) {
-                                // Set access token as cookie for web interface
-                                document.cookie = `access_token=${result.access_token}; path=/; max-age=${rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60}; secure; samesite=lax`;
+                            // Always set access token as cookie for web interface
+                            if (result.access_token) {
+                                // Set access token as cookie with appropriate expiration
+                                const maxAge = rememberMe
+                                    ? 30 * 24 * 60 * 60
+                                    : 24 * 60 * 60; // 30 days or 1 day
+                                document.cookie = `access_token=${result.access_token}; path=/; max-age=${maxAge}; samesite=lax`;
                             }
 
                             // Redirect after short delay
