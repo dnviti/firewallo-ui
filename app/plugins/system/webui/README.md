@@ -227,6 +227,13 @@ webui/
 │   ├── js/           # JavaScript files
 │   └── img/          # Images and icons
 └── tests/            # Unit and integration tests
+    ├── __init__.py   # Test package initialization
+    ├── test_plugin.py # Core plugin functionality tests
+    ├── test_integration.py # Plugin manager integration tests
+    ├── test_api.py   # API endpoint tests
+    ├── test_services.py # Service layer tests
+    ├── run_tests.py  # Test runner script
+    └── pytest.ini   # Pytest configuration
 ```
 
 ### Adding New Pages
@@ -294,24 +301,100 @@ ws.send(JSON.stringify({
 
 ## Testing
 
-### Unit Tests
+### Comprehensive Test Suite
+
+The WebUI plugin includes a dedicated test suite with comprehensive coverage:
 
 ```bash
-# Run unit tests
-pytest app/plugins/system/webui/tests/
+# Navigate to the plugin tests directory
+cd app/plugins/system/webui/tests/
 
-# Run with coverage
-pytest --cov=app.plugins.system.webui
+# Run all tests with the test runner
+python run_tests.py
+
+# Run with verbose output
+python run_tests.py -v
+
+# Run with coverage report
+python run_tests.py --coverage
+
+# Check test dependencies
+python run_tests.py --check-deps
 ```
 
-### Integration Tests
+### Test Categories
+
+#### Unit Tests (`test_plugin.py`)
+- Plugin structure and file validation
+- Manifest validation and completeness
+- Plugin inheritance and method implementation
+- Configuration validation
+- Health status reporting
+- Plugin lifecycle (initialization/shutdown)
+
+#### Integration Tests (`test_integration.py`)
+- Plugin manager integration
+- Plugin loading/unloading
+- Plugin discovery and validation
+- Database schema integration
+- Configuration management
+- Error handling and recovery
+- Performance characteristics
+
+#### API Tests (`test_api.py`)
+- Web route functionality
+- API endpoint testing
+- Request/response validation
+- Error handling
+- Authentication/authorization
+- Input validation
+- Performance testing
+
+#### Service Tests (`test_services.py`)
+- Template service functionality
+- Static file serving
+- Session management
+- Widget management
+- Theme management
+- WebSocket management
+- Activity logging
+- Backup/restore operations
+- Metrics collection
+
+### Running Specific Tests
 
 ```bash
-# Test API endpoints
-python -m pytest tests/test_webui_api.py
+# Run specific test file
+python run_tests.py --test test_plugin.py
 
-# Test WebSocket connections
-python -m pytest tests/test_websocket.py
+# Run specific test function
+python run_tests.py --test test_plugin.py --function test_plugin_import
+
+# Run with pytest directly
+pytest test_plugin.py -v
+
+# Run specific test class
+pytest test_plugin.py::TestWebUIPluginStructure -v
+```
+
+### Test Requirements
+
+Install test dependencies:
+
+```bash
+pip install pytest pytest-asyncio pytest-json-report coverage
+```
+
+### Coverage Reports
+
+Generate detailed coverage reports:
+
+```bash
+# Run tests with coverage
+python run_tests.py --coverage
+
+# View HTML coverage report
+open tests/coverage_html/index.html
 ```
 
 ### Manual Testing
@@ -320,6 +403,9 @@ python -m pytest tests/test_websocket.py
 2. Use browser developer tools to inspect network requests
 3. Test responsive design using device emulation
 4. Verify accessibility with screen readers
+5. Test plugin loading/unloading via plugin manager
+6. Validate configuration changes take effect
+7. Test WebSocket real-time updates
 
 ## Performance Optimization
 
@@ -445,6 +531,50 @@ iptables -A INPUT -p tcp --dport 8080 -s 192.168.1.0/24 -j ACCEPT
 
 We welcome contributions! Please see the main project's CONTRIBUTING.md for guidelines.
 
+### Development Setup
+
+1. **Clone the repository** and navigate to the WebUI plugin
+2. **Install dependencies** including test requirements
+3. **Run the test suite** to ensure everything works
+4. **Make your changes** following plugin framework standards
+5. **Add tests** for new functionality
+6. **Run tests again** to ensure nothing breaks
+7. **Submit a pull request** with clear description
+
+### Adding New Features
+
+When adding new features to the WebUI plugin:
+
+1. **Update the manifest.json** if new permissions or configuration options are needed
+2. **Add appropriate routes** in the plugin.py file
+3. **Create service classes** in services.py for complex operations
+4. **Add comprehensive tests** in the tests/ directory
+5. **Update documentation** including this README
+
+### Test Requirements
+
+All new code must include:
+- Unit tests for individual functions/methods
+- Integration tests for plugin framework interaction
+- API tests for new endpoints
+- Service tests for new service functionality
+
+### Running Quality Checks
+
+```bash
+# Run all tests
+python tests/run_tests.py
+
+# Check code coverage (should be > 80%)
+python tests/run_tests.py --coverage
+
+# Run linting (if configured)
+flake8 plugin.py services.py
+
+# Check type hints (if using mypy)
+mypy plugin.py services.py
+```
+
 ### Reporting Issues
 
 Report issues through the GitHub issue tracker with:
@@ -452,6 +582,7 @@ Report issues through the GitHub issue tracker with:
 - Browser and OS information
 - Steps to reproduce
 - Error messages and logs
+- Test results if applicable
 
 ### Feature Requests
 
@@ -459,6 +590,7 @@ Submit feature requests with:
 - Use case description
 - Proposed implementation
 - Mockups or wireframes (if applicable)
+- Test plan for the new feature
 
 ## License
 
