@@ -1,0 +1,272 @@
+{
+  "name": "webui",
+  "display_name": "Firewallo Web UI",
+  "category": "system",
+  "version": "2.0.0",
+  "description": "Modern Bootstrap-based web interface for Firewallo firewall management with real-time monitoring and control",
+  "author": "Firewallo Team",
+  "email": "support@firewallo.com",
+  "license": "MIT",
+  "repository": "https://github.com/firewallo/firewallo-ui",
+  "homepage": "https://firewallo.com",
+  "documentation": "https://docs.firewallo.com/plugins/webui",
+  "dependencies": {
+    "python": ">=3.8",
+    "packages": [
+      "fastapi>=0.100.0",
+      "jinja2>=3.1.0",
+      "python-multipart>=0.0.5",
+      "psutil>=5.8.0",
+      "aiofiles>=0.8.0",
+      "websockets>=10.0"
+    ],
+    "system": []
+  },
+  "permissions": [
+    "system.read",
+    "system.write",
+    "plugin.manage",
+    "network.read",
+    "firewall.read",
+    "firewall.write",
+    "log.read",
+    "user.manage",
+    "file.read",
+    "file.write"
+  ],
+  "configuration": {
+    "required": [
+      "enabled",
+      "port",
+      "host"
+    ],
+    "optional": [
+      "theme",
+      "auto_refresh_interval",
+      "session_timeout",
+      "max_sessions",
+      "enable_notifications",
+      "enable_sound_alerts",
+      "enable_dark_mode",
+      "enable_api_docs",
+      "custom_logo_path",
+      "custom_css_path",
+      "dashboard_widgets",
+      "default_language",
+      "timezone",
+      "date_format",
+      "enable_metrics",
+      "enable_activity_log",
+      "max_log_entries",
+      "enable_backup",
+      "backup_schedule"
+    ],
+    "defaults": {
+      "enabled": true,
+      "port": 8080,
+      "host": "0.0.0.0",
+      "theme": "default",
+      "auto_refresh_interval": 60,
+      "session_timeout": 3600,
+      "max_sessions": 100,
+      "enable_notifications": true,
+      "enable_sound_alerts": false,
+      "enable_dark_mode": false,
+      "enable_api_docs": true,
+      "dashboard_widgets": [
+        "system_status",
+        "cpu_usage",
+        "memory_usage",
+        "disk_usage",
+        "network_traffic",
+        "active_plugins",
+        "recent_activity",
+        "quick_actions"
+      ],
+      "default_language": "en",
+      "timezone": "UTC",
+      "date_format": "YYYY-MM-DD HH:mm:ss",
+      "enable_metrics": true,
+      "enable_activity_log": true,
+      "max_log_entries": 1000,
+      "enable_backup": true,
+      "backup_schedule": "daily"
+    }
+  },
+  "api_prefix": "/api/webui",
+  "database_path": "plugins.system.webui",
+  "supports_hot_reload": true,
+  "min_firewallo_version": "1.0.0",
+  "max_firewallo_version": "3.0.0",
+  "priority": 100,
+  "auto_start": true,
+  "tags": [
+    "system",
+    "webui",
+    "interface",
+    "dashboard",
+    "monitoring",
+    "management",
+    "bootstrap",
+    "responsive"
+  ],
+  "icon": "webui-icon.svg",
+  "screenshots": [
+    "screenshots/dashboard.png",
+    "screenshots/plugins.png",
+    "screenshots/monitoring.png",
+    "screenshots/settings.png"
+  ],
+  "features": [
+    "Real-time system monitoring dashboard",
+    "Plugin management interface",
+    "Firewall rule configuration",
+    "Activity and security log viewer",
+    "User authentication and management",
+    "Responsive Bootstrap 5 design",
+    "Dark/light theme support",
+    "Multi-language support",
+    "WebSocket real-time updates",
+    "RESTful API integration",
+    "Export/import configurations",
+    "Backup and restore functionality",
+    "Customizable dashboard widgets",
+    "Mobile-friendly interface",
+    "Role-based access control"
+  ],
+  "platform_support": {
+    "linux": true,
+    "windows": true,
+    "macos": true,
+    "docker": true
+  },
+  "ui_components": {
+    "framework": "Bootstrap 5",
+    "templates": "Jinja2",
+    "icons": "Bootstrap Icons",
+    "charts": "Chart.js",
+    "realtime": "WebSocket"
+  },
+  "security": {
+    "authentication": "JWT",
+    "session_management": true,
+    "csrf_protection": true,
+    "rate_limiting": true,
+    "ssl_support": true,
+    "two_factor_auth": false
+  },
+  "performance": {
+    "max_concurrent_users": 100,
+    "recommended_concurrent_users": 50,
+    "cache_enabled": true,
+    "compression_enabled": true,
+    "static_file_optimization": true
+  },
+  "routes": {
+    "web": [
+      "/",
+      "/dashboard",
+      "/plugins",
+      "/firewall",
+      "/monitoring",
+      "/logs",
+      "/settings",
+      "/login",
+      "/logout"
+    ],
+    "api": [
+      "/api/webui/status",
+      "/api/webui/config",
+      "/api/webui/metrics",
+      "/api/webui/widgets",
+      "/api/webui/theme",
+      "/api/webui/export",
+      "/api/webui/import"
+    ]
+  },
+  "widgets": [
+    {
+      "id": "system_status",
+      "name": "System Status",
+      "description": "Overall system health and status",
+      "size": "small",
+      "refresh_interval": 30
+    },
+    {
+      "id": "cpu_usage",
+      "name": "CPU Usage",
+      "description": "Real-time CPU utilization",
+      "size": "small",
+      "refresh_interval": 5
+    },
+    {
+      "id": "memory_usage",
+      "name": "Memory Usage",
+      "description": "RAM and swap usage",
+      "size": "small",
+      "refresh_interval": 10
+    },
+    {
+      "id": "disk_usage",
+      "name": "Disk Usage",
+      "description": "Storage utilization",
+      "size": "small",
+      "refresh_interval": 60
+    },
+    {
+      "id": "network_traffic",
+      "name": "Network Traffic",
+      "description": "Real-time network I/O",
+      "size": "medium",
+      "refresh_interval": 2
+    },
+    {
+      "id": "active_plugins",
+      "name": "Active Plugins",
+      "description": "Currently enabled plugins",
+      "size": "medium",
+      "refresh_interval": 30
+    },
+    {
+      "id": "recent_activity",
+      "name": "Recent Activity",
+      "description": "Latest system events",
+      "size": "large",
+      "refresh_interval": 10
+    },
+    {
+      "id": "quick_actions",
+      "name": "Quick Actions",
+      "description": "Common administrative tasks",
+      "size": "small",
+      "refresh_interval": 0
+    }
+  ],
+  "customization": {
+    "themes": [
+      "default",
+      "dark",
+      "high_contrast",
+      "blue",
+      "green"
+    ],
+    "languages": [
+      "en",
+      "es",
+      "fr",
+      "de",
+      "it",
+      "pt",
+      "ru",
+      "zh",
+      "ja",
+      "ko"
+    ],
+    "branding": {
+      "allow_custom_logo": true,
+      "allow_custom_css": true,
+      "allow_custom_favicon": true,
+      "allow_custom_title": true
+    }
+  }
+}

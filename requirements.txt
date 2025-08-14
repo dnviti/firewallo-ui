@@ -18,3 +18,4 @@ python-multipart==0.0.20
 cryptography>=3.0.0
 qrcode>=7.0.0
 pillow>=8.0.0
+psutil>=5.8.0

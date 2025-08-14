@@ -590,7 +590,7 @@ class PluginManager:
                 )
 
         # Validate category is supported
-        supported_categories = ['vpn', 'firewall', 'monitoring', 'network', 'security']
+        supported_categories = ['vpn', 'firewall', 'monitoring', 'network', 'security', 'system']
         if manifest['category'] not in supported_categories:
             raise PluginManifestError(
                 f"Unsupported plugin category: {manifest['category']}",

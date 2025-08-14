@@ -7,12 +7,15 @@ Frontend completely removed - API only.
 from __future__ import annotations
 
 from fastapi import APIRouter
+from fastapi.staticfiles import StaticFiles
 from app.core.config import create_app
 from app.core.startup import run_startup_tasks
-from app.api.routes import auth, plugins, gui
+from app.api.routes import auth, plugins, gui, system
 from app.plugins import plugin_manager
 import logging
 import asyncio
+from pathlib import Path
+from typing import Optional
 
 
 app = create_app()
@@ -20,6 +23,15 @@ app = create_app()
 # Setup logging for plugins
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("firewallo.main")
+
+# Global flag to track if WebUI plugin is loaded
+webui_plugin_loaded = False
+webui_plugin_instance: Optional[object] = None
+
+# Mount static files - will be overridden if WebUI plugin is loaded
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 @app.on_event("startup")
@@ -44,6 +56,9 @@ async def _startup():
             if not success:
                 logger.error(f"Failed to load plugin: {plugin_path}")
 
+        # Check if WebUI plugin is loaded and configure accordingly
+        await configure_webui_plugin()
+
     except Exception as e:
         logger.error(f"Plugin system initialization failed: {e}")
 
@@ -65,9 +80,52 @@ async def _shutdown():
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth.router, prefix="/auth")
 api_router.include_router(plugins.router, prefix="/plugins", tags=["plugins"])
+api_router.include_router(system.router, prefix="/system", tags=["system"])
 
-# Include GUI routes for redirects (since this is API-only)
-app.include_router(gui.router)
+# Include GUI routes only if WebUI plugin is not loaded
+# (WebUI plugin will handle these routes if it's active)
+if not webui_plugin_loaded:
+    app.include_router(gui.router)
+
+# Function to configure WebUI plugin if loaded
+async def configure_webui_plugin():
+    """Configure WebUI plugin if it's loaded."""
+    global webui_plugin_loaded, webui_plugin_instance
+
+    try:
+        # Check if WebUI plugin is loaded
+        enabled_plugins = plugin_manager.get_enabled_plugins()
+        for plugin in enabled_plugins:
+            if plugin.name == "webui" and plugin.category == "system":
+                webui_plugin_loaded = True
+                webui_plugin_instance = plugin
+
+                logger.info("WebUI plugin detected - configuring web interface...")
+
+                # Mount WebUI static files if they exist
+                if hasattr(plugin, 'static_dir') and plugin.static_dir.exists():
+                    # Remove default static mount and replace with WebUI's
+                    app.mount("/static", StaticFiles(directory=str(plugin.static_dir)), name="static")
+                    logger.info(f"Mounted WebUI static files from {plugin.static_dir}")
+
+                # Register WebUI routes
+                plugin_routes = plugin.get_api_routes()
+                if plugin_routes:
+                    for router in plugin_routes:
+                        # WebUI web routes go directly to app, API routes go to api_router
+                        if hasattr(router, 'tags') and 'webui' in router.tags:
+                            app.include_router(router)
+                            logger.info("Registered WebUI web routes")
+                        elif hasattr(router, 'tags') and 'webui-api' in router.tags:
+                            # Already has prefix in the router definition
+                            api_router.include_router(router)
+                            logger.info("Registered WebUI API routes")
+
+                logger.info("WebUI plugin configured successfully")
+                break
+
+    except Exception as e:
+        logger.error(f"Failed to configure WebUI plugin: {e}")
 
 # Function to register plugin routes dynamically
 def register_plugin_routes():
@@ -78,6 +136,10 @@ def register_plugin_routes():
 
         for plugin in enabled_plugins:
             try:
+                # Skip WebUI plugin as it's handled separately
+                if plugin.name == "webui" and plugin.category == "system":
+                    continue
+
                 # Get plugin routes
                 plugin_routes = plugin.get_api_routes()
                 if plugin_routes:
@@ -110,10 +172,18 @@ async def register_routes():
     await asyncio.sleep(0.1)
 
     try:
+        # Re-configure WebUI plugin in case it was loaded late
+        await configure_webui_plugin()
+
+        # If WebUI plugin is loaded and we had default GUI routes, remove them
+        if webui_plugin_loaded:
+            # The WebUI plugin will handle all web routes
+            logger.info("WebUI plugin is active - using plugin-provided web interface")
+
         registered_count = register_plugin_routes()
         if registered_count > 0:
             logger.info(f"Plugin route registration completed: {registered_count} plugins")
         else:
-            logger.warning("No plugin routes were registered")
+            logger.warning("No plugin routes were registered (excluding WebUI)")
     except Exception as e:
         logger.error(f"Plugin route registration failed: {e}")
