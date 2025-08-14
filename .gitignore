@@ -84,3 +84,4 @@ docker-compose.override.yml
 # ------------------------
 *.pid
 *.DS_Store
+data/
