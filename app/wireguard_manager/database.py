@@ -1,30 +1,20 @@
 """Database bootstrap logic.
 
-This module now supports selecting the metadata storage (servers/peers) backend
+This module supports selecting the metadata storage (servers/peers/users) backend
 via the environment variable DATABASE_TYPE. Supported values:
   - "mongodb": use Motor (async MongoDB driver) connecting to MONGO_URI and MONGO_DB_NAME
   - "litedb": use a local JSON document store (simple, file‑based) located at app/db/metadata.json
 
-Irrespective of metadata backend, the SQLAlchemy engine is still provided for
-user authentication (fastapi-users) which currently relies on relational tables.
+All data including user authentication is handled by the selected backend.
 """
 
+import json
 import os
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import declarative_base
-
-# ------------------ SQLAlchemy (still used for users) ------------------
+# Get the base directory for file paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, '..', 'db', 'wg_config.db')}"
-
-ASYNC_DATABASE_URL = DATABASE_URL.replace('sqlite:///', 'sqlite+aiosqlite:///')
-engine = create_async_engine(ASYNC_DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-Base = declarative_base()
 
 # ------------------ Metadata backend selection ------------------
 DATABASE_TYPE: str = os.getenv("DATABASE_TYPE", "litedb").strip().lower()
@@ -54,18 +44,41 @@ LITE_DB_FILE = Path(BASE_DIR).parent / "db" / "metadata.json"
 LITE_DB_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 def ensure_litedb_file():
+    """Ensure the LiteDB file exists with proper structure."""
     if not LITE_DB_FILE.exists():
-        LITE_DB_FILE.write_text('{"servers": [], "peers": []}', encoding="utf-8")
+        # New modular structure with sections for plugins, core, and auth
+        default_structure = {
+            "plugins": {
+                "vpn": {
+                    "wireguard": {
+                        "servers": [],
+                        "peers": []
+                    }
+                }
+            },
+            "core": {
+                "system": {},
+                "config": {},
+                "logs": []
+            },
+            "auth": {
+                "users": [],
+                "rbac": {
+                    "roles": [],
+                    "permissions": [],
+                    "assignments": []
+                }
+            }
+        }
+        LITE_DB_FILE.write_text(json.dumps(default_structure, indent=2), encoding="utf-8")
 
 if DATABASE_TYPE == "litedb":
     ensure_litedb_file()
 
 __all__ = [
-    "SessionLocal",
-    "Base",
-    "engine",
     "DATABASE_TYPE",
     "mongo_db",
     "mongo_client",
     "LITE_DB_FILE",
+    "ensure_litedb_file",
 ]

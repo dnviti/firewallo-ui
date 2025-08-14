@@ -2,49 +2,51 @@ from __future__ import annotations
 from typing import Optional
 import ipaddress
 from fastapi import APIRouter, Depends, Request, Form
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from app.wireguard_manager import models
 from app.wireguard_manager.repository import repo, PeerDoc
-from app.users.users import current_active_user
+from app.auth.models import current_active_user
+from app.wireguard_manager.repository import UserDoc
 from app.services import wireguard
-from app.core.validators import is_ip_valid
-import base64
+from app.services.validation import ValidationService
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter(tags=["gui"])
 
 @router.get("/modify_allowed_ips")
-def get_modify_allowed_ips_form(request: Request, user: models.User = Depends(current_active_user)):
+def get_modify_allowed_ips_form(request: Request, user: UserDoc = Depends(current_active_user)):
     return templates.TemplateResponse("modify_allowed_ips.html", {"request": request})
 
 @router.post("/modify_allowed_ips")
-def modify_allowed_ips(request: Request, username: str = Form(...), server_interface: str = Form(...), user: models.User = Depends(current_active_user)):
+def modify_allowed_ips(request: Request, username: str = Form(...), server_interface: str = Form(...), user: UserDoc = Depends(current_active_user)):
     peer = repo.get_peer(server_interface, username)
     if not peer:
         return templates.TemplateResponse("modify_allowed_ips.html", {"request": request, "error": "Peer not found", "username": username, "server_interface": server_interface})
     return templates.TemplateResponse("edit_allowed_ips.html", {"request": request, "peer": peer})
 
 @router.post("/update_allowed_ips")
-def update_allowed_ips(request: Request, username: str = Form(...), server_interface: str = Form(...), allowed_ips: str = Form(...), user: models.User = Depends(current_active_user)):
+def update_allowed_ips(request: Request, username: str = Form(...), server_interface: str = Form(...), allowed_ips: str = Form(...), user: UserDoc = Depends(current_active_user)):
     peer = repo.get_peer(server_interface, username)
     if not peer:
         return templates.TemplateResponse("edit_allowed_ips.html", {"request": request, "error": "Peer not found", "peer": peer})
-    if not is_ip_valid(allowed_ips):
+    
+    if not ValidationService.validate_ip_address(allowed_ips):
         return templates.TemplateResponse("edit_allowed_ips.html", {"request": request, "error": "Invalid allowed IPs", "peer": peer})
+    
     try:
         repo.update_peer(server_interface, username, allowed_ips=allowed_ips)
     except ValueError:
         return templates.TemplateResponse("edit_allowed_ips.html", {"request": request, "error": "Peer not found", "peer": peer})
+    
     return RedirectResponse(url="/peers_list", status_code=303)
 
 @router.get("/peers_list")
-def list_peers(request: Request, user: models.User = Depends(current_active_user)):
+def list_peers(request: Request, user: UserDoc = Depends(current_active_user)):
     peers = repo.list_peers()
     return templates.TemplateResponse("peers_list.html", {"request": request, "peers": peers})
 
 @router.get("/delete_peer")
-def delete_peer_confirmation(username: str, server_interface: str, user: models.User = Depends(current_active_user)):
+def delete_peer_confirmation(username: str, server_interface: str, user: UserDoc = Depends(current_active_user)):
     try:
         repo.delete_peer(server_interface, username)
     except ValueError:
@@ -52,12 +54,12 @@ def delete_peer_confirmation(username: str, server_interface: str, user: models.
     return RedirectResponse(url="/peers_list", status_code=303)
 
 @router.get("/add_peer")
-def get_add_peer_form(request: Request, user: models.User = Depends(current_active_user)):
+def get_add_peer_form(request: Request, user: UserDoc = Depends(current_active_user)):
     servers = repo.list_servers()
     return templates.TemplateResponse("add_peer.html", {"request": request, "servers": servers})
 
 @router.post("/add_peer")
-def add_peer(request: Request, username: str = Form(...), server_interface: str = Form(...), allowed_ips: str = Form(...), endpoint: Optional[str] = Form(None), group: Optional[str] = Form(None), persistent_keepalive: Optional[int] = Form(None), user: models.User = Depends(current_active_user)):
+def add_peer(request: Request, username: str = Form(...), server_interface: str = Form(...), allowed_ips: str = Form(...), endpoint: Optional[str] = Form(None), group: Optional[str] = Form(None), persistent_keepalive: Optional[int] = Form(None), user: UserDoc = Depends(current_active_user)):
     server_doc = repo.get_server(server_interface)
     if not server_doc:
         return templates.TemplateResponse("add_peer.html", {"request": request, "error": "Server not found", "servers": repo.list_servers()})
@@ -94,8 +96,5 @@ def spa_index(request: Request, rest: str | None = None):  # auth handled client
 
 @router.get('/favicon.ico', include_in_schema=False)
 def favicon():
-    # Lightweight ICO (16x16) embedded as binary; generated from SVG concept.
-    ico_bytes = base64.b64decode(
-        b'AAABAAEAEBAQAAEAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAQAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8AAAAAAAAAAP///wD09PQA7OzsgN/f35Df39+Q39/fkN/f35Df39+Q39/fkN/f35Df39+Q39/fkN/f35Df39+Q7+/vwP///wAAAAAA////AOvr6wCbm5uAmZmZkJmZmZCZmpqQmZmZkJmZmZCZmpqQmZmZkJmZmZCZmpqQmZmZkJubm4Dq6usA////AAAAAAD///8A7e3tAJmZmYCFhYV/hYWFf4WFhX+FhYV/hYWFf4WFhX+FhYV/hYWFf4WFhX+FhYV/iYmJgO3t7QD///8AAAAAAP///wDt7e0AmZmZgIWFhX+Hh4d/h4eHf4eHh3+Hh4d/h4eHf4eHh3+Hh4d/h4eHf4eHh3+KiopA7e3tAP///wAAAAAA////AO/v7wCsqqqAjIyMf4yMjH+MjIx/jIyMf4yMjH+MjIx/jIyMf4yMjH+MjIx/jIyMf46OjoDv7+8A////AAAAAAD///8A////AObm5gCtq6uArKysgKysrICsrKyArKysgKysrICsrKyArKysgKysrICsrKyAqqqqgP///wD///8AAAAAAP///wD///8A////AOnp6QDu7u7A6enpwOnp6cDp6enA6enpwOnp6cDp6enA6enpwOnp6cDo6OgA////AP///wAAAAAA////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AAAAAAD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8A////AP///wD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
-    )
-    return Response(content=ico_bytes, media_type='image/x-icon')
+    """Serve favicon from static files."""
+    return FileResponse('app/static/favicon.ico', media_type='image/x-icon')

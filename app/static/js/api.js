@@ -26,7 +26,7 @@ const API = (() => {
   }
 
   async function login(username, password) {
-    // fastapi-users expects form-encoded credentials at /api/auth/jwt/login
+    // Custom JWT auth expects form-encoded credentials at /api/auth/login
     const form = new URLSearchParams();
     form.append('username', username);
     form.append('password', password);

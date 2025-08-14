@@ -1,33 +1,52 @@
 from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
-from app.wireguard_manager import models, schemas
+from app.wireguard_manager import schemas
 from app.wireguard_manager.repository import repo, ServerDoc
-from app.users.users import current_active_user
+from app.auth.models import current_active_user
+from app.wireguard_manager.repository import UserDoc
 from typing import List
 from app.services import wireguard
-from app.core.validators import is_ip_valid
+from app.services.key_generation import KeyGenerationService
+from app.services.validation import ValidationService
 
 router = APIRouter(prefix="/servers", tags=["servers"])
 
 @router.post("/", response_model=schemas.ServerCreateResponse)
-def create_server(server: schemas.ServerCreate, user: models.User = Depends(current_active_user)):
+def create_server(server: schemas.ServerCreate, user: UserDoc = Depends(current_active_user)):
     existing = repo.get_server(server.interface)
     if existing:
         raise HTTPException(status_code=400, detail="Server already exists")
-    private_key = wireguard.generate_private_key()
-    public_key = wireguard.generate_public_key(private_key)
-    if not is_ip_valid(server.address):
+    
+    if not ValidationService.validate_ip_address(server.address):
         raise HTTPException(status_code=401, detail="This address is not an IP")
-    doc = ServerDoc(interface=server.interface, private_key=private_key, public_key=public_key, listen_port=server.listen_port, address=server.address, mtu=server.mtu)
+    
+    private_key, public_key = KeyGenerationService.generate_server_keys()
+    doc = ServerDoc(
+        interface=server.interface, 
+        private_key=private_key, 
+        public_key=public_key, 
+        listen_port=server.listen_port, 
+        address=server.address, 
+        mtu=server.mtu
+    )
+    
     try:
         repo.create_server(doc)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    return schemas.ServerCreateResponse(interface=doc.interface, listen_port=doc.listen_port, address=doc.address, mtu=doc.mtu, public_key=doc.public_key, private_key=private_key)
+    
+    return schemas.ServerCreateResponse(
+        interface=doc.interface, 
+        listen_port=doc.listen_port, 
+        address=doc.address, 
+        mtu=doc.mtu, 
+        public_key=doc.public_key, 
+        private_key=private_key
+    )
 
 @router.put("/{server_interface}", response_model=schemas.Server)
-def update_server(server_interface: str, server: schemas.ServerUpdate, user: models.User = Depends(current_active_user)):
+def update_server(server_interface: str, server: schemas.ServerUpdate, user: UserDoc = Depends(current_active_user)):
     try:
         updated = repo.update_server(server_interface, server.listen_port, server.address, server.mtu)
     except ValueError:
@@ -35,7 +54,7 @@ def update_server(server_interface: str, server: schemas.ServerUpdate, user: mod
     return schemas.Server(interface=updated.interface, listen_port=updated.listen_port, address=updated.address, mtu=updated.mtu, public_key=updated.public_key)
 
 @router.delete("/{server_interface}")
-def delete_server(server_interface: str, user: models.User = Depends(current_active_user)):
+def delete_server(server_interface: str, user: UserDoc = Depends(current_active_user)):
     try:
         repo.delete_server(server_interface)
     except ValueError:
@@ -43,7 +62,7 @@ def delete_server(server_interface: str, user: models.User = Depends(current_act
     return {"detail": "Server deleted"}
 
 @router.post("/{server_interface}/persist")
-def persist_server_config(server_interface: str, user: models.User = Depends(current_active_user)):
+def persist_server_config(server_interface: str, user: UserDoc = Depends(current_active_user)):
     db_server = repo.get_server(server_interface)
     if not db_server:
         raise HTTPException(status_code=404, detail="Server not found")
@@ -57,6 +76,6 @@ def persist_server_config(server_interface: str, user: models.User = Depends(cur
     return FileResponse(filename, media_type="text/plain", filename=filename)
 
 @router.get("/", response_model=List[schemas.Server])
-def list_servers(user: models.User = Depends(current_active_user)):
+def list_servers(user: UserDoc = Depends(current_active_user)):
     servers = repo.list_servers()
     return [schemas.Server(interface=s.interface, listen_port=s.listen_port, address=s.address, mtu=s.mtu, public_key=s.public_key) for s in servers]
