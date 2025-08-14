@@ -5,7 +5,7 @@ import json
 from dataclasses import asdict
 from typing import List, Optional
 
-from app.wireguard_manager.repository import ServerDoc, PeerDoc, UserDoc
+from ..repository import ServerDoc, PeerDoc, UserDoc
 
 
 class LiteDBBackend:

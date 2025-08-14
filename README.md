@@ -15,7 +15,7 @@ it's possible to work with 3 different workflows: base, remote, Manifest based
 
 Application network example
 
-![Application](asset/Firewallo-Application.jpg "Application")
+![Application](docs/asset/Firewallo-Application.jpg "Application")
 
 ###### Base
 
@@ -23,7 +23,7 @@ Evrything is on firewall VM, the VM expose an HTTPS page where the user can acce
 
 Like most firewall non-enterprise grade
 
-![Base](asset/Firewallo-Base.jpg "Base")
+![Base](docs/asset/Firewallo-Base.jpg "Base")
 
 ###### Remote
 
@@ -31,7 +31,7 @@ It work's like Microtik, the user access an app on hes own pc, intertact and in 
 
 a file will be written via SCP on firewall
 
-![Remote](asset/Firewallo-Remote.jpg "Remote")
+![Remote](docs/asset/Firewallo-Remote.jpg "Remote")
 
 ###### Manifest
 
@@ -39,7 +39,7 @@ It mimics the devops workflow, there is one or more manifest file where all it's
 
 Firewall listen for changes in S3 (or other) and pull the changes if any
 
-![Manifest](asset/Firewallo-Manifest.jpg "Manifest")
+![Manifest](docs/asset/Firewallo-Manifest.jpg "Manifest")
 
 #### Defined technologies
 

@@ -5,7 +5,7 @@ import ipaddress
 from typing import Optional, Set
 from fastapi import HTTPException
 
-from app.wireguard_manager.repository import repo
+from app.plugins.wireguard.repository import repo
 
 
 class IPAllocationService:

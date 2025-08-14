@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from app.auth.models import hash_password
-from app.wireguard_manager.repository import repo, UserDoc
+from app.plugins.wireguard.repository import repo, UserDoc
 
 
 def create_default_admin() -> None:

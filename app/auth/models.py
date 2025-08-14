@@ -12,7 +12,7 @@ from fastapi import HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 if TYPE_CHECKING:
-    from app.wireguard_manager.repository import UserDoc
+        from app.plugins.wireguard.repository import UserDoc
 
 
 # JWT configuration
@@ -73,7 +73,7 @@ security = HTTPBearer()
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> "UserDoc":
     """Get the current authenticated user."""
-    from app.wireguard_manager.repository import repo
+    from app.plugins.wireguard.repository import repo
     
     payload = verify_token(credentials.credentials)
     username = payload.get("sub")

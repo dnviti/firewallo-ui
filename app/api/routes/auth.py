@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
 from app.auth.models import User, hash_password, verify_password, create_access_token
-from app.wireguard_manager.repository import repo, UserDoc
+from app.plugins.wireguard.repository import repo, UserDoc
 
 
 class UserCreate(BaseModel):

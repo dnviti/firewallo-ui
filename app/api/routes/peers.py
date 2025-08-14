@@ -2,10 +2,10 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse
 from typing import List, Optional
-from app.wireguard_manager import schemas
-from app.wireguard_manager.repository import repo, PeerDoc
+from app.plugins.wireguard import schemas
+from app.plugins.wireguard.repository import repo, PeerDoc
 from app.auth.models import current_active_user
-from app.wireguard_manager.repository import UserDoc
+from app.plugins.wireguard.repository import UserDoc
 from app.services import wireguard
 from app.services.key_generation import KeyGenerationService
 from app.services.ip_allocation import IPAllocationService
