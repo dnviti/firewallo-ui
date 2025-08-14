@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 from app.core.config import create_app
 from app.core.startup import run_startup_tasks
-from app.api.routes import servers, peers, auth, plugins
+from app.api.routes import auth, plugins, gui
 from app.plugins import plugin_manager
 import logging
 import asyncio
@@ -63,10 +63,11 @@ async def _shutdown():
 
 # API Router setup - Only manage /api paths
 api_router = APIRouter(prefix="/api")
-api_router.include_router(servers.router)
-api_router.include_router(peers.router)
 api_router.include_router(auth.router, prefix="/auth")
 api_router.include_router(plugins.router, prefix="/plugins", tags=["plugins"])
+
+# Include GUI routes for redirects (since this is API-only)
+app.include_router(gui.router)
 
 # Function to register plugin routes dynamically
 def register_plugin_routes():
