@@ -21,6 +21,7 @@ from .database import Base
 class User(SQLAlchemyBaseUserTable[int], Base):
     __tablename__ = "user"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Optional display name; nullable to avoid registration constraint failures.
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True, default="", server_default="")
 
 __all__ = ["User"]

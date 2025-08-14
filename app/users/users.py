@@ -1,7 +1,5 @@
-
-import uuid
 from fastapi import Depends, Request
-from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin
+from fastapi_users import BaseUserManager, FastAPIUsers
 from app.users.db import get_user_db
 from app.wireguard_manager.models import User
 
@@ -9,7 +7,20 @@ from app.wireguard_manager.models import User
 SECRET = "SECRET"
 
 
-class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
+# NOTE:
+#   Original code mixed UUIDIDMixin with an integer primary key model (User.id -> int),
+#   producing a runtime mismatch for fastapi-users generic parameters. Reverting to
+#   a plain BaseUserManager with correct type parameter (int) fixes registration/login.
+class UserManager(BaseUserManager[User, int]):
+    # Override to ensure string IDs are converted to int. Signature must keep parameter name 'id'
+    # to satisfy the abstract base method in fastapi-users.
+    def parse_id(self, id):  # type: ignore[override]
+        if isinstance(id, int):  # noqa: A003 - shadowing builtin acceptable here per base class contract
+            return id
+        try:
+            return int(id)
+        except (TypeError, ValueError) as exc:  # pragma: no cover - defensive
+            raise ValueError("Invalid user id") from exc
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
 

@@ -13,16 +13,17 @@ from app.wireguard_manager.database import Base, engine
 from app.api.routes import servers, peers, gui
 
 
-def create_db_and_tables():
-    Base.metadata.create_all(bind=engine)
+async def create_db_and_tables():
+    async with engine.begin() as conn:  # type: ignore[attr-defined]
+        await conn.run_sync(Base.metadata.create_all)
 
 
 app = create_app()
 
 
 @app.on_event("startup")
-def _startup():
-    create_db_and_tables()
+async def _startup():
+    await create_db_and_tables()
 
 
 api_router = APIRouter(prefix="/api")
