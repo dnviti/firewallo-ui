@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "email": "admin@firewallo.io",
+      "username": "admin",
+      "hashed_password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+      "is_active": true,
+      "is_superuser": true,
+      "first_name": "Administrator",
+      "last_name": "",
+      "role": "admin",
+      "created_at": "2025-08-14T19:06:06.171501",
+      "updated_at": "2025-08-14T19:06:06.171505"
+    }
+  ],
+  "created_at": "2025-08-14T19:06:06.171209",
+  "version": "1.0.0"
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "Python Debugger: FastAPI",
+    "type": "python",
+    "request": "launch",
+    "module": "uvicorn",
+    "args": ["app.main:app", "--reload"],
+    "cwd": "${workspaceFolder}",
+    "console": "integratedTerminal",
+    "justMyCode": false
+  }
+]
