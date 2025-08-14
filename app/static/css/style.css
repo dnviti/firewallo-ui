@@ -5,6 +5,7 @@
 }
 body { margin:0; background:linear-gradient(135deg,#0d1117,#121b24); color:var(--text); -webkit-font-smoothing: antialiased; }
 .app-header { display:flex; align-items:center; gap:1rem; padding:.75rem 1.25rem; background:rgba(25,32,42,.8); backdrop-filter: blur(12px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10; }
+.floating-header { position:fixed; top:0; left:0; right:0; margin-left:230px; transition:margin-left .25s; }
 .brand { font-size:1.1rem; font-weight:600; letter-spacing:.5px; cursor:pointer; background:transparent !important; border:none; color:var(--text); padding:0 .25rem; }
 nav a { color:var(--muted); margin-right:1rem; text-decoration:none; cursor:pointer; position:relative; padding:.4rem .6rem; border-radius: var(--radius); font-size:.9rem; }
 nav a.active, nav a:hover { color:var(--text); background:var(--panel); }
@@ -12,6 +13,7 @@ nav button, .main-menu button { background:transparent; border:none; color:var(-
 nav button.active, nav button:hover, .main-menu button.active, .main-menu button:hover { color:var(--text); background:var(--panel); }
 .layout { min-height:100vh; display:flex; flex-direction:column; }
 .content { flex:1; width:100%; max-width:1200px; margin:1.25rem auto; padding:0 1.25rem 2rem; }
+.floating-header + .content, .floating-header ~ .content, .layout .content { padding-top:4.25rem; }
 .footer { padding:1rem; text-align:center; font-size:.75rem; color:var(--muted); border-top:1px solid var(--border); background:var(--bg-alt); }
 .panel { background:var(--panel); border:1px solid var(--border); padding:1.25rem 1.5rem 1.75rem; border-radius:var(--radius); box-shadow:0 4px 16px -4px rgba(0,0,0,.4); max-width:720px; }
 h1,h2,h3 { font-weight:500; }
@@ -45,11 +47,13 @@ table button { font-size:.65rem; padding:.4rem .55rem; }
 .sidebar { width:230px; background:#141b22; border-right:1px solid var(--border); padding:.75rem .75rem 1.25rem; display:flex; flex-direction:column; gap:1rem; position:sticky; top:0; height:100vh; }
 .sidebar .brand { font-size:1.15rem; text-align:left; padding:0; }
 .burger { display:none; }
+.floating-burger { position:fixed; top:1rem; left:1rem; z-index:150; box-shadow:0 4px 14px -4px #000a; }
 @media (max-width:900px){
   .sidebar { position:fixed; left:0; top:0; transform:translateX(-101%); transition:.25s transform; z-index:100; box-shadow:4px 0 18px -6px #0008; }
   .sidebar.open { transform:translateX(0); }
   .burger { display:inline-flex; align-items:center; justify-content:center; background:var(--panel); border:1px solid var(--border); width:42px; height:42px; border-radius:8px; cursor:pointer; }
   .layout { margin-left:0 !important; }
+  .floating-header { margin-left:0; }
 }
 .menu-section { display:flex; flex-direction:column; gap:.4rem; }
 .menu-heading { font-size:.65rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin-top:.5rem; }

@@ -45,6 +45,8 @@ function Sidebar({ open, toggle, path, go, user, logout }) {
 }
 
 function Layout({ children, path, go, user, logout }) {
+  // Do not render layout shell on login (standalone template handles it); safeguard in case of SPA navigation
+  if (path === '/login') return <>{children}</>;
   const [open, setOpen] = React.useState(false);
   const toggle = ()=> setOpen(o=>!o);
   React.useEffect(()=>{ setOpen(false); }, [path]);
@@ -52,8 +54,8 @@ function Layout({ children, path, go, user, logout }) {
     <div className="app-shell">
       <Sidebar open={open} toggle={toggle} path={path} go={go} user={user} logout={logout} />
       <div className="layout" style={{flex:1, marginLeft:'230px'}}>
-        <header className="app-header" style={{display:'flex',gap:'.75rem'}}>
-          <button className="burger" type="button" aria-label="Menu" onClick={toggle}>☰</button>
+        <header className="app-header floating-header" style={{display:'flex',gap:'.75rem'}}>
+          <button className="burger floating-burger" type="button" aria-label="Menu" onClick={toggle}>☰</button>
           <h1 style={{fontSize:'1rem',margin:0,fontWeight:500}}>Firewallo</h1>
         </header>
         <main className="content">{children}</main>
@@ -505,21 +507,17 @@ function App() {
   const logout = ()=>{ localStorage.removeItem('jwt'); push('/login'); };
   React.useEffect(()=>{
     if (!token && path !== '/login') {
-      push('/login');
-    } else if (token && path === '/login') {
-      push('/plugins/wireguard/peers');
+      window.location.href = '/login';
     }
-  }, [token, path, push]);
+  }, [token, path]);
   let page;
-  if (!token && path !== '/login') {
-    page = <Login onSuccess={()=>go('/plugins/wireguard/peers')} />; // redirecting
+  if (!token) {
+    page = null; // handled by redirect/login template
   } else {
     // authenticated route resolution using switch for style compliance
     switch (path) {
       case '/':
         page = <WelcomePage />; break;
-      case '/login':
-        page = <Login onSuccess={()=>go('/plugins/wireguard/peers')} />; break;
       case '/plugins/wireguard':
         page = <ServersPage go={go} />; break; // main wireguard page shows servers list
       case '/plugins/wireguard/peers':

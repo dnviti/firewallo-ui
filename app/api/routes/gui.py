@@ -84,7 +84,10 @@ def add_peer(request: Request, username: str = Form(...), server_interface: str 
 
 # SPA entry routes (React front-end). Multiple paths serve the same shell enabling deep links.
 @router.get("/", include_in_schema=False)
+# /login served as standalone (non-React) template
 @router.get("/login", include_in_schema=False)
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 # Legacy wireguard paths (backward compatibility)
 @router.get("/peers", include_in_schema=False)
 @router.get("/peers/{rest:path}", include_in_schema=False)
