@@ -62,3 +62,17 @@ Firewall listen for changes in S3 (or other) and pull the changes if any
 # Note
 
 - Diagrams are made with draw.io you can import the image in draw.io and edit it
+
+## Configuration
+
+Set environment variable DATABASE_TYPE to select metadata backend:
+
+Supported values:
+- litedb (default): local JSON file at app/db/metadata.json
+- mongodb: requires MONGO_URI (default mongodb://localhost:27017) and optional MONGO_DB_NAME (default firewallo)
+
+Example (.env):
+
+DATABASE_TYPE=litedb
+# MONGO_URI=mongodb://mongo:27017
+# MONGO_DB_NAME=firewallo

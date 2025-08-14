@@ -1,34 +1,26 @@
-# models.py
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+"""Relational models required for authentication.
 
-class Server(Base):
-    __tablename__ = "servers"
+The application previously defined SQLAlchemy ORM models for WireGuard
+servers and peers. Those have been removed in favor of the JSON / MongoDB
+metadata repository abstraction implemented in `repository.py`. Retaining
+only the `User` model keeps the relational schema minimal and avoids the
+confusion of an unused second metadata source.
 
-    interface = Column(String, primary_key=True)
-    private_key = Column(String, nullable=False)
-    public_key = Column(String, nullable=False)
-    listen_port = Column(Integer, nullable=False)
-    mtu = Column(Integer, nullable=False)
-    address = Column(String, nullable=False)  # e.g., "10.0.0.1/24"
+`Base` is imported from `database` so there is a single declarative base
+throughout the project.
+"""
 
-    peers = relationship("Peer", back_populates="server", cascade="all, delete-orphan")
+from sqlalchemy import Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
+from fastapi_users.db import SQLAlchemyBaseUserTable
 
-class Peer(Base):
-    __tablename__ = "peers"
+from .database import Base
 
-    username = Column(String, primary_key=True)
-    server_interface = Column(Integer, ForeignKey("servers.interface"))
-    private_ip = Column(String, nullable=False)
-    private_key = Column(String, nullable=False)
-    public_key = Column(String, nullable=False)
-    allowed_ips = Column(String, nullable=False)
-    endpoint = Column(String, nullable=False)
-    preshared_key = Column(String, nullable=True)
-    group = Column(String, nullable=True)
-    persistent_keepalive = Column(Integer, nullable=True)
 
-    server = relationship("Server", back_populates="peers")
+class User(SQLAlchemyBaseUserTable[int], Base):
+    __tablename__ = "user"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+
+__all__ = ["User"]

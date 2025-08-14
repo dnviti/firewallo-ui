@@ -20,15 +20,13 @@ class Peer(PeerBase):
     server_interface: str
     public_key: str
     preshared_key: Optional[str]
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class PeerCreateResponse(Peer):
     private_key: str
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ServerBase(BaseModel):
     interface: str
@@ -44,12 +42,10 @@ class ServerUpdate(ServerBase):
 
 class Server(ServerBase):
     public_key: str
-
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ServerCreateResponse(Server):
     private_key: str
-
     class Config:
-        orm_mode = True
+        from_attributes = True
