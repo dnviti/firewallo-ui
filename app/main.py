@@ -8,17 +8,57 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 from app.core.config import create_app
-from app.core.startup import create_default_admin
-from app.api.routes import servers, peers, auth
+from app.core.startup import run_startup_tasks
+from app.api.routes import servers, peers, auth, plugins
+from app.plugins import plugin_manager
+import logging
+import asyncio
 
 
 app = create_app()
 
+# Setup logging for plugins
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("firewallo.main")
+
 
 @app.on_event("startup")
-def _startup():
+async def _startup():
     """Application startup tasks."""
-    create_default_admin()
+    run_startup_tasks()
+
+    # Initialize plugin system
+    logger.info("Initializing plugin system...")
+    try:
+        # Discover available plugins
+        discovered = await plugin_manager.discover_plugins()
+        logger.info(f"Discovered {len(discovered)} plugins: {discovered}")
+
+        # Load all plugins
+        load_results = await plugin_manager.load_all_plugins(auto_enable=True)
+        successful_loads = sum(1 for success in load_results.values() if success)
+        logger.info(f"Loaded {successful_loads}/{len(load_results)} plugins successfully")
+
+        # Log any failures
+        for plugin_path, success in load_results.items():
+            if not success:
+                logger.error(f"Failed to load plugin: {plugin_path}")
+
+    except Exception as e:
+        logger.error(f"Plugin system initialization failed: {e}")
+
+
+@app.on_event("shutdown")
+async def _shutdown():
+    """Application shutdown tasks."""
+    logger.info("Shutting down plugin system...")
+    try:
+        # Unload all plugins gracefully
+        unload_results = await plugin_manager.unload_all_plugins()
+        successful_unloads = sum(1 for success in unload_results.values() if success)
+        logger.info(f"Unloaded {successful_unloads}/{len(unload_results)} plugins successfully")
+    except Exception as e:
+        logger.error(f"Plugin system shutdown failed: {e}")
 
 
 # API Router setup - Only manage /api paths
@@ -26,7 +66,53 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(servers.router)
 api_router.include_router(peers.router)
 api_router.include_router(auth.router, prefix="/auth")
+api_router.include_router(plugins.router, prefix="/plugins", tags=["plugins"])
+
+# Function to register plugin routes dynamically
+def register_plugin_routes():
+    """Register routes from all enabled plugins."""
+    try:
+        enabled_plugins = plugin_manager.get_enabled_plugins()
+        registered_count = 0
+
+        for plugin in enabled_plugins:
+            try:
+                # Get plugin routes
+                plugin_routes = plugin.get_api_routes()
+                if plugin_routes:
+                    for router in plugin_routes:
+                        # Include each router with plugin-specific prefix
+                        api_prefix = getattr(plugin, 'manifest', {}).get('api_prefix')
+                        if not api_prefix:
+                            api_prefix = f"/{plugin.category}/{plugin.name}"
+
+                        api_router.include_router(router, prefix=api_prefix, tags=[plugin.name])
+                        registered_count += 1
+                        logger.info(f"Registered routes for plugin {plugin.name} at {api_prefix}")
+            except Exception as e:
+                logger.error(f"Failed to register routes for plugin {plugin.name}: {e}")
+
+        logger.info(f"Successfully registered routes from {registered_count} plugins")
+        return registered_count
+    except Exception as e:
+        logger.error(f"Failed to register plugin routes: {e}")
+        return 0
 
 # Include only API router
 app.include_router(api_router)
 
+# Add route registration on startup (after plugins are loaded)
+@app.on_event("startup")
+async def register_routes():
+    """Register plugin routes after plugins are loaded."""
+    # Small delay to ensure plugins are fully loaded
+    await asyncio.sleep(0.1)
+
+    try:
+        registered_count = register_plugin_routes()
+        if registered_count > 0:
+            logger.info(f"Plugin route registration completed: {registered_count} plugins")
+        else:
+            logger.warning("No plugin routes were registered")
+    except Exception as e:
+        logger.error(f"Plugin route registration failed: {e}")

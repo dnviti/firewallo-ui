@@ -9,10 +9,12 @@ from dataclasses import dataclass
 
 import jwt
 from fastapi import HTTPException, Depends, status
+from fastapi import Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 if TYPE_CHECKING:
-        from app.plugins.wireguard.repository import UserDoc
+        from typing import Dict, Any
+        UserDoc = Dict[str, Any]
 
 
 # JWT configuration
@@ -49,7 +51,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.now() + expires_delta
     else:
         expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -71,10 +73,12 @@ def verify_token(token: str) -> dict:
 security = HTTPBearer()
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> "UserDoc":
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> Dict[str, Any]:
     """Get the current authenticated user."""
-    from app.plugins.wireguard.repository import repo
-    
+    from app.core.startup import CoreUserRepository
+
+    user_repo = CoreUserRepository()
+
     payload = verify_token(credentials.credentials)
     username = payload.get("sub")
     if not username:
@@ -83,17 +87,37 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    user = repo.get_user_by_username(username)
-    if user is None:
+
+    user = user_repo.get_user_by_username(username)
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     return user
 
 
+class User:
+    """User model for compatibility with existing code."""
+
+    def __init__(self, user_data: Dict[str, Any]):
+        self.username = user_data.get("username", "")
+        self.email = user_data.get("email", "")
+        self.is_active = user_data.get("is_active", False)
+        self.is_superuser = user_data.get("is_superuser", False)
+        self.first_name = user_data.get("first_name", "")
+        self.last_name = user_data.get("last_name", "")
+        self.role = user_data.get("role", "user")
+        self.created_at = user_data.get("created_at", "")
+        self.hashed_password = user_data.get("hashed_password", "")
+
+
 # Alias for compatibility with existing code
-current_active_user = get_current_user
+async def current_active_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> User:
+    """Get current active user dependency."""
+    user_data = await get_current_user(credentials)
+    if not user_data.get("is_active", False):
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return User(user_data)

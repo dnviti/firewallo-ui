@@ -1,136 +1,421 @@
+"""Generic peer/client management API routes.
+
+This module provides generic peer/client management functionality that can work with
+any plugin through the plugin framework. Plugin-specific functionality
+should be implemented within the plugins themselves.
+"""
+
 from __future__ import annotations
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse, PlainTextResponse
-from typing import List, Optional
-from app.plugins.wireguard import schemas
-from app.plugins.wireguard.repository import repo, PeerDoc
+from fastapi import APIRouter, HTTPException, Depends, Query
+from typing import List, Optional, Dict, Any
 from app.auth.models import current_active_user
-from app.plugins.wireguard.repository import UserDoc
-from app.services import wireguard
-from app.services.key_generation import KeyGenerationService
-from app.services.ip_allocation import IPAllocationService
-from app.services.validation import ValidationService
+from app.plugins import plugin_manager
 
 router = APIRouter(tags=["peers"])
 
-@router.post("/servers/{server_interface}/peers/", response_model=schemas.PeerCreateResponse)
-def create_peer_for_server(server_interface: str, peer: schemas.PeerCreate, user: UserDoc = Depends(current_active_user)):
-    """Create a peer.
-    If peer.private_ip is blank or the literal 'auto', the next available IP within the server network is assigned.
-    'allowed_ips' may use 0.0.0.0/0 but private_ip cannot.
-    """
-    server_doc = repo.get_server(server_interface)
-    if not server_doc:
-        raise HTTPException(status_code=404, detail="Server not found")
 
-    keys = KeyGenerationService.generate_key_triplet()
-    desired_private_ip = _resolve_private_ip(server_doc, server_interface, peer.private_ip)
-    ValidationService.validate_peer_ips(desired_private_ip, peer.allowed_ips)
-
-    doc = PeerDoc(
-        server_interface=server_interface, 
-        username=peer.username, 
-        private_ip=desired_private_ip, 
-        private_key=keys.private_key, 
-        public_key=keys.public_key, 
-        allowed_ips=peer.allowed_ips, 
-        endpoint=peer.endpoint, 
-        group=peer.group, 
-        persistent_keepalive=peer.persistent_keepalive, 
-        preshared_key=keys.preshared_key
-    )
+@router.get("/peers")
+async def list_all_peers(
+    plugin_category: str = Query("vpn", description="Plugin category to filter by"),
+    server_id: Optional[str] = Query(None, description="Filter by server ID"),
+    user = Depends(current_active_user)
+):
+    """List all peers/clients across all enabled plugins of the specified category."""
     try:
-        repo.create_peer(doc)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    
-    return schemas.PeerCreateResponse(
-        username=doc.username, 
-        server_interface=doc.server_interface, 
-        private_ip=doc.private_ip, 
-        allowed_ips=doc.allowed_ips, 
-        endpoint=doc.endpoint or "", 
-        group=doc.group or "", 
-        persistent_keepalive=doc.persistent_keepalive, 
-        public_key=doc.public_key, 
-        preshared_key=doc.preshared_key, 
-        private_key=keys.private_key
-    )
+        enabled_plugins = plugin_manager.get_enabled_plugins(category=plugin_category)
+
+        all_peers = []
+        for plugin in enabled_plugins:
+            try:
+                if hasattr(plugin, 'list_clients'):
+                    peers = await plugin.list_clients(server_id=server_id)
+                    # Add plugin info to each peer
+                    for peer in peers:
+                        peer_dict = peer.__dict__ if hasattr(peer, '__dict__') else dict(peer)
+                        peer_dict['plugin_name'] = plugin.name
+                        peer_dict['plugin_category'] = plugin.category
+                        all_peers.append(peer_dict)
+            except Exception as e:
+                # Log error but continue with other plugins
+                print(f"Error getting peers from plugin {plugin.name}: {e}")
+
+        return {
+            "peers": all_peers,
+            "total": len(all_peers),
+            "plugins_checked": len(enabled_plugins),
+            "server_filter": server_id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list peers: {str(e)}")
 
 
-def _resolve_private_ip(server_doc, server_interface: str, requested: str) -> str:
-    """Resolve the private IP for a peer, auto-allocating if needed."""
-    requested = (requested or '').strip()
-    if requested and requested.lower() != 'auto':
-        return requested
-    
-    return IPAllocationService.get_next_available_ip(server_interface, server_doc.address)
-
-@router.put("/servers/{server_interface}/peers/{peer_username}", response_model=schemas.Peer)
-def update_peer(server_interface: str, peer_username: str, peer: schemas.PeerUpdate, user: UserDoc = Depends(current_active_user)):
+@router.get("/peers/plugins")
+async def get_available_peer_plugins(user = Depends(current_active_user)):
+    """Get all available plugins that provide peer/client functionality."""
     try:
-        updated = repo.update_peer(server_interface, peer_username, allowed_ips=peer.allowed_ips, endpoint=peer.endpoint, persistent_keepalive=peer.persistent_keepalive)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Peer not found")
-    return schemas.Peer(username=updated.username, server_interface=updated.server_interface, private_ip=updated.private_ip, allowed_ips=updated.allowed_ips, endpoint=updated.endpoint or "", group=updated.group or "", persistent_keepalive=updated.persistent_keepalive, public_key=updated.public_key, preshared_key=updated.preshared_key)
+        enabled_plugins = plugin_manager.get_enabled_plugins()
 
-@router.delete("/servers/{server_interface}/peers/{peer_username}")
-def delete_peer(server_interface: str, peer_username: str, user: UserDoc = Depends(current_active_user)):
+        peer_plugins = []
+        for plugin in enabled_plugins:
+            if hasattr(plugin, 'list_clients') or hasattr(plugin, 'create_client'):
+                plugin_info = plugin.get_info()
+                plugin_info['has_clients'] = hasattr(plugin, 'list_clients')
+                plugin_info['can_create_clients'] = hasattr(plugin, 'create_client')
+                plugin_info['supports_config_generation'] = hasattr(plugin, 'generate_config')
+                peer_plugins.append(plugin_info)
+
+        return {
+            "plugins": peer_plugins,
+            "total": len(peer_plugins)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get peer plugins: {str(e)}")
+
+
+@router.get("/peers/stats")
+async def get_peer_statistics(user = Depends(current_active_user)):
+    """Get aggregated peer statistics across all plugins."""
     try:
-        repo.delete_peer(server_interface, peer_username)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Peer not found")
-    return {"detail": "Peer deleted"}
+        enabled_plugins = plugin_manager.get_enabled_plugins()
 
-@router.post("/peers/{peer_username}/persist")
-def persist_peer_config(peer_username: str, custom_allowed_ips: Optional[str] = None, user: UserDoc = Depends(current_active_user)):
-    wg_peer = repo.get_peer_by_username(peer_username)
-    if not wg_peer:
-        raise HTTPException(status_code=404, detail="Server not found")
-    if custom_allowed_ips:
-        wg_peer.allowed_ips = custom_allowed_ips
-    srv = repo.get_server(wg_peer.server_interface)
-    if not srv:
-        raise HTTPException(status_code=404, detail="Server not found")
-    peer_struct = wireguard.PeerFullConfigLite(private_ip=wg_peer.private_ip, private_key=wg_peer.private_key, server=wireguard.ServerRefLite(public_key=srv.public_key, mtu=srv.mtu), endpoint=wg_peer.endpoint, allowed_ips=wg_peer.allowed_ips, preshared_key=wg_peer.preshared_key, persistent_keepalive=wg_peer.persistent_keepalive)
-    conf_content = wireguard.render_peer_config(peer_struct)
-    filename = f"{peer_username}.conf"
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(conf_content)
-    return FileResponse(filename, media_type="text/plain", filename=filename)
+        total_peers = 0
+        active_peers = 0
+        plugin_stats = {}
 
-@router.get("/peers", response_model=List[schemas.Peer])
-def get_peers(server_interface: Optional[str] = None, user: UserDoc = Depends(current_active_user)):
-    peers = repo.list_peers(server_interface)
-    return [schemas.Peer(username=p.username, server_interface=p.server_interface, private_ip=p.private_ip, allowed_ips=p.allowed_ips, endpoint=p.endpoint or "", group=p.group or "", persistent_keepalive=p.persistent_keepalive, public_key=p.public_key, preshared_key=p.preshared_key) for p in peers]
+        for plugin in enabled_plugins:
+            try:
+                if hasattr(plugin, 'list_clients'):
+                    peers = await plugin.list_clients()
+                    plugin_peer_count = len(peers)
+                    plugin_active_count = len([p for p in peers if getattr(p, 'enabled', False)])
 
-@router.put("/peers/{username}/allowed_ips", response_model=schemas.Peer)
-def update_peer_allowed_ips(username: str, allowed_ips: str, user: UserDoc = Depends(current_active_user)):
-    existing = repo.get_peer_by_username(username)
-    if not existing:
-        raise HTTPException(status_code=404, detail="Peer not found")
-    
-    ValidationService.validate_allowed_ips_format(allowed_ips)
-    updated = repo.update_peer(existing.server_interface, username, allowed_ips=allowed_ips)
-    
-    return schemas.Peer(
-        username=updated.username, 
-        server_interface=updated.server_interface, 
-        private_ip=updated.private_ip, 
-        allowed_ips=updated.allowed_ips, 
-        endpoint=updated.endpoint or "", 
-        group=updated.group or "", 
-        persistent_keepalive=updated.persistent_keepalive, 
-        public_key=updated.public_key, 
-        preshared_key=updated.preshared_key
-    )
+                    total_peers += plugin_peer_count
+                    active_peers += plugin_active_count
 
-@router.get("/next_ip")
-def next_ips(server_interface: Optional[str] = None, user: UserDoc = Depends(current_active_user)):
-    peers = repo.list_peers(server_interface)
-    used_ips = {p.private_ip.split('/')[0] for p in peers}
-    
-    if not used_ips:
-        return PlainTextResponse(IPAllocationService.get_first_ip_when_empty(server_interface))
-    
-    return PlainTextResponse(IPAllocationService.increment_ip(used_ips))
+                    plugin_stats[plugin.name] = {
+                        "total_peers": plugin_peer_count,
+                        "active_peers": plugin_active_count,
+                        "inactive_peers": plugin_peer_count - plugin_active_count,
+                        "category": plugin.category
+                    }
+            except Exception as e:
+                plugin_stats[plugin.name] = {
+                    "error": str(e),
+                    "total_peers": 0,
+                    "active_peers": 0
+                }
+
+        return {
+            "total_peers": total_peers,
+            "active_peers": active_peers,
+            "inactive_peers": total_peers - active_peers,
+            "plugin_stats": plugin_stats,
+            "plugins_checked": len(enabled_plugins)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get peer statistics: {str(e)}")
+
+
+@router.get("/peers/health")
+async def check_all_peer_health(user = Depends(current_active_user)):
+    """Check health status of all peers across all plugins."""
+    try:
+        enabled_plugins = plugin_manager.get_enabled_plugins()
+
+        health_report = {
+            "overall_status": "healthy",
+            "plugins": {},
+            "total_peers": 0,
+            "healthy_peers": 0,
+            "unhealthy_peers": 0
+        }
+
+        for plugin in enabled_plugins:
+            try:
+                plugin_health = {
+                    "plugin_status": "healthy",
+                    "peers": [],
+                    "peer_count": 0
+                }
+
+                if hasattr(plugin, 'list_clients'):
+                    peers = await plugin.list_clients()
+                    plugin_health["peer_count"] = len(peers)
+                    health_report["total_peers"] += len(peers)
+
+                    for peer in peers:
+                        peer_health = {
+                            "id": getattr(peer, 'id', 'unknown'),
+                            "name": getattr(peer, 'name', 'unknown'),
+                            "server_id": getattr(peer, 'server_id', 'unknown'),
+                            "status": "healthy" if getattr(peer, 'enabled', False) else "inactive"
+                        }
+
+                        # Try to get detailed health if plugin supports it
+                        if hasattr(plugin, 'get_connection_status'):
+                            try:
+                                status = await plugin.get_connection_status(peer.server_id, peer.id)
+                                peer_health["status"] = status.status
+                                peer_health["details"] = status.__dict__
+                            except:
+                                pass  # Use basic status
+
+                        plugin_health["peers"].append(peer_health)
+
+                        if peer_health["status"] in ["healthy", "active", "connected"]:
+                            health_report["healthy_peers"] += 1
+                        else:
+                            health_report["unhealthy_peers"] += 1
+
+                health_report["plugins"][plugin.name] = plugin_health
+
+            except Exception as e:
+                health_report["plugins"][plugin.name] = {
+                    "plugin_status": "error",
+                    "error": str(e),
+                    "peers": [],
+                    "peer_count": 0
+                }
+                health_report["overall_status"] = "degraded"
+
+        # Determine overall status
+        if health_report["unhealthy_peers"] > 0:
+            health_report["overall_status"] = "degraded"
+        if health_report["total_peers"] == 0:
+            health_report["overall_status"] = "no_peers"
+
+        return health_report
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to check peer health: {str(e)}")
+
+
+@router.get("/peers/by-server/{server_id}")
+async def get_peers_by_server(server_id: str, user = Depends(current_active_user)):
+    """Get all peers for a specific server across all plugins."""
+    try:
+        enabled_plugins = plugin_manager.get_enabled_plugins()
+
+        server_peers = []
+        server_found = False
+
+        for plugin in enabled_plugins:
+            try:
+                # First check if the server exists in this plugin
+                if hasattr(plugin, 'get_server'):
+                    server = await plugin.get_server(server_id)
+                    if server:
+                        server_found = True
+                        # Get peers for this server
+                        if hasattr(plugin, 'list_clients'):
+                            peers = await plugin.list_clients(server_id=server_id)
+                            for peer in peers:
+                                peer_dict = peer.__dict__ if hasattr(peer, '__dict__') else dict(peer)
+                                peer_dict['plugin_name'] = plugin.name
+                                peer_dict['plugin_category'] = plugin.category
+                                server_peers.append(peer_dict)
+                        break  # Found the server, no need to check other plugins
+            except Exception as e:
+                # Continue checking other plugins
+                print(f"Error checking server {server_id} in plugin {plugin.name}: {e}")
+
+        if not server_found:
+            raise HTTPException(status_code=404, detail=f"Server {server_id} not found in any plugin")
+
+        return {
+            "server_id": server_id,
+            "peers": server_peers,
+            "peer_count": len(server_peers)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get peers for server: {str(e)}")
+
+
+@router.get("/peers/search")
+async def search_peers(
+    query: str = Query(..., description="Search query (name, email, etc.)"),
+    user = Depends(current_active_user)
+):
+    """Search for peers across all plugins."""
+    try:
+        enabled_plugins = plugin_manager.get_enabled_plugins()
+
+        search_results = []
+        query_lower = query.lower()
+
+        for plugin in enabled_plugins:
+            try:
+                if hasattr(plugin, 'list_clients'):
+                    peers = await plugin.list_clients()
+                    for peer in peers:
+                        # Search in peer name, email, and description
+                        peer_name = getattr(peer, 'name', '').lower()
+                        peer_email = getattr(peer, 'email', '').lower()
+                        peer_desc = getattr(peer, 'description', '').lower()
+
+                        if (query_lower in peer_name or
+                            query_lower in peer_email or
+                            query_lower in peer_desc):
+
+                            peer_dict = peer.__dict__ if hasattr(peer, '__dict__') else dict(peer)
+                            peer_dict['plugin_name'] = plugin.name
+                            peer_dict['plugin_category'] = plugin.category
+                            search_results.append(peer_dict)
+            except Exception as e:
+                print(f"Error searching peers in plugin {plugin.name}: {e}")
+
+        return {
+            "query": query,
+            "results": search_results,
+            "result_count": len(search_results)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to search peers: {str(e)}")
+
+
+@router.post("/peers/bulk-action")
+async def bulk_peer_action(
+    action: str = Query(..., description="Action to perform: enable, disable, delete"),
+    peer_ids: List[str] = Query(..., description="List of peer IDs"),
+    user = Depends(current_active_user)
+):
+    """Perform bulk actions on multiple peers across plugins."""
+    try:
+        if action not in ["enable", "disable", "delete"]:
+            raise HTTPException(status_code=400, detail="Invalid action. Must be: enable, disable, or delete")
+
+        enabled_plugins = plugin_manager.get_enabled_plugins()
+        results = {}
+
+        for peer_id in peer_ids:
+            results[peer_id] = {"success": False, "error": "Peer not found in any plugin"}
+
+            # Find the peer in any plugin
+            for plugin in enabled_plugins:
+                try:
+                    if hasattr(plugin, 'get_client'):
+                        peer = await plugin.get_client(peer_id)
+                        if peer:
+                            # Found the peer, perform the action
+                            if action == "enable" and hasattr(plugin, 'update_client'):
+                                from app.plugins.categories.vpn import VPNClientUpdate
+                                update_data = VPNClientUpdate(enabled=True)
+                                await plugin.update_client(peer_id, update_data)
+                                results[peer_id] = {"success": True, "action": "enabled"}
+                            elif action == "disable" and hasattr(plugin, 'update_client'):
+                                from app.plugins.categories.vpn import VPNClientUpdate
+                                update_data = VPNClientUpdate(enabled=False)
+                                await plugin.update_client(peer_id, update_data)
+                                results[peer_id] = {"success": True, "action": "disabled"}
+                            elif action == "delete" and hasattr(plugin, 'delete_client'):
+                                success = await plugin.delete_client(peer_id)
+                                results[peer_id] = {"success": success, "action": "deleted"}
+                            else:
+                                results[peer_id] = {"success": False, "error": f"Plugin does not support {action}"}
+                            break  # Found and processed, no need to check other plugins
+                except Exception as e:
+                    results[peer_id] = {"success": False, "error": str(e)}
+
+        successful = sum(1 for result in results.values() if result["success"])
+        return {
+            "action": action,
+            "peer_ids": peer_ids,
+            "results": results,
+            "successful": successful,
+            "failed": len(peer_ids) - successful
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to perform bulk action: {str(e)}")
+
+
+@router.get("/peers/configurations")
+async def get_all_peer_configurations(
+    format: str = Query("json", description="Configuration format: json, configs"),
+    user = Depends(current_active_user)
+):
+    """Get configuration information for all peers across all plugins."""
+    try:
+        enabled_plugins = plugin_manager.get_enabled_plugins()
+
+        configurations = []
+
+        for plugin in enabled_plugins:
+            try:
+                if hasattr(plugin, 'list_clients'):
+                    peers = await plugin.list_clients()
+                    for peer in peers:
+                        config_info = {
+                            "peer_id": getattr(peer, 'id', 'unknown'),
+                            "peer_name": getattr(peer, 'name', 'unknown'),
+                            "server_id": getattr(peer, 'server_id', 'unknown'),
+                            "plugin_name": plugin.name,
+                            "plugin_category": plugin.category,
+                            "has_config_generation": hasattr(plugin, 'generate_config')
+                        }
+
+                        if format == "configs" and hasattr(plugin, 'generate_config'):
+                            try:
+                                config = await plugin.generate_config(peer.id)
+                                config_info["config_content"] = config.config_content
+                                config_info["has_qr_code"] = config.qr_code is not None
+                            except Exception as e:
+                                config_info["config_error"] = str(e)
+
+                        configurations.append(config_info)
+            except Exception as e:
+                print(f"Error getting configurations from plugin {plugin.name}: {e}")
+
+        return {
+            "format": format,
+            "configurations": configurations,
+            "total": len(configurations)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get peer configurations: {str(e)}")
+
+
+# Redirect endpoints - these redirect to the appropriate plugin endpoints
+@router.get("/peers/redirect/{plugin_name}")
+async def redirect_to_plugin_peers(plugin_name: str, user = Depends(current_active_user)):
+    """Get information about how to access a specific plugin's peer endpoints."""
+    try:
+        # Find plugin by name in any category
+        all_plugins = plugin_manager.get_all_plugins()
+        target_plugin = None
+
+        for path, plugin in all_plugins.items():
+            if plugin.name == plugin_name:
+                target_plugin = plugin
+                break
+
+        if not target_plugin:
+            raise HTTPException(status_code=404, detail=f"Plugin '{plugin_name}' not found")
+
+        if not target_plugin.enabled:
+            raise HTTPException(status_code=503, detail=f"Plugin '{plugin_name}' is disabled")
+
+        # Get plugin's API information
+        plugin_info = target_plugin.get_info()
+        api_prefix = plugin_info.get('api_prefix', f'/api/{target_plugin.category}/{target_plugin.name}')
+
+        return {
+            "plugin_name": plugin_name,
+            "plugin_category": target_plugin.category,
+            "api_prefix": api_prefix,
+            "available_endpoints": {
+                "clients": f"{api_prefix}/clients",
+                "create_client": f"{api_prefix}/clients",
+                "client_config": f"{api_prefix}/clients/{{client_id}}/config",
+                "client_status": f"{api_prefix}/clients/{{client_id}}/status"
+            },
+            "plugin_info": plugin_info,
+            "supports_clients": hasattr(target_plugin, 'list_clients'),
+            "supports_config_generation": hasattr(target_plugin, 'generate_config')
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get plugin peer redirect info: {str(e)}")

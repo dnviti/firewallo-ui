@@ -1,0 +1,98 @@
+{
+  "name": "wireguard",
+  "display_name": "WireGuard VPN",
+  "category": "vpn",
+  "version": "1.0.0",
+  "description": "Modern, fast, and secure VPN implementation using WireGuard protocol",
+  "author": "Firewallo Team",
+  "email": "support@firewallo.com",
+  "license": "MIT",
+  "repository": "https://github.com/firewallo/firewallo-ui",
+  "homepage": "https://www.wireguard.com/",
+  "documentation": "https://docs.firewallo.com/plugins/wireguard",
+  "dependencies": {
+    "python": ">=3.11",
+    "packages": [
+      "cryptography>=3.0.0",
+      "pynacl>=1.4.0",
+      "qrcode>=7.0.0",
+      "pillow>=8.0.0",
+      "ipaddress>=1.0.0"
+    ],
+    "system": [
+      "wireguard-tools",
+      "iptables",
+      "ip"
+    ]
+  },
+  "permissions": [
+    "network.create",
+    "network.modify",
+    "system.execute",
+    "file.read",
+    "file.write"
+  ],
+  "configuration": {
+    "required": [
+      "interface_name",
+      "listen_port"
+    ],
+    "optional": [
+      "private_key",
+      "public_key",
+      "network_range",
+      "dns_servers",
+      "mtu",
+      "keep_alive",
+      "post_up_script",
+      "post_down_script",
+      "table",
+      "save_config"
+    ]
+  },
+  "api_prefix": "/api/vpn/wireguard",
+  "database_path": "plugins.vpn.wireguard",
+  "supports_hot_reload": true,
+  "min_firewallo_version": "1.0.0",
+  "max_firewallo_version": "2.0.0",
+  "tags": [
+    "vpn",
+    "wireguard",
+    "security",
+    "networking",
+    "encryption"
+  ],
+  "icon": "wireguard-icon.svg",
+  "screenshots": [
+    "screenshots/servers.png",
+    "screenshots/clients.png",
+    "screenshots/config.png"
+  ],
+  "features": [
+    "Server and client management",
+    "QR code generation for mobile clients",
+    "Real-time connection monitoring",
+    "Automatic key generation",
+    "Configuration backup and restore",
+    "Traffic statistics",
+    "Multi-server support"
+  ],
+  "platform_support": {
+    "linux": true,
+    "windows": false,
+    "macos": false,
+    "docker": true
+  },
+  "security": {
+    "encryption": "ChaCha20Poly1305",
+    "key_exchange": "Curve25519",
+    "hashing": "BLAKE2s",
+    "authenticated": true
+  },
+  "performance": {
+    "max_clients_per_server": 1000,
+    "recommended_clients_per_server": 100,
+    "bandwidth_overhead": "minimal",
+    "cpu_usage": "low"
+  }
+}
