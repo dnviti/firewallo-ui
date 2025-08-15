@@ -42,7 +42,7 @@
 
 /* Body and layout improvements */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
 }
 
@@ -156,13 +156,15 @@ body {
 }
 
 /* Form enhancements */
-.form-control, .form-select {
+.form-control,
+.form-select {
     border-radius: var(--border-radius);
     border: 1px solid #ced4da;
     transition: var(--transition);
 }
 
-.form-control:focus, .form-select:focus {
+.form-control:focus,
+.form-select:focus {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
 }
@@ -251,7 +253,7 @@ body {
 }
 
 .stat-card::before {
-    content: '';
+    content: "";
     position: absolute;
     top: -50%;
     right: -50%;
@@ -286,13 +288,17 @@ body {
 }
 
 .activity-timeline::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 0.75rem;
     top: 0;
     height: 100%;
     width: 2px;
-    background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(
+        to bottom,
+        var(--primary-color),
+        var(--secondary-color)
+    );
 }
 
 .activity-item {
@@ -302,7 +308,7 @@ body {
 }
 
 .activity-item::before {
-    content: '';
+    content: "";
     position: absolute;
     left: -1.875rem;
     top: 1.5rem;
@@ -349,14 +355,22 @@ body {
 
 /* Utility classes */
 .text-gradient {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--secondary-color)
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
 .bg-gradient-primary {
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(
+        135deg,
+        var(--primary-color),
+        var(--secondary-color)
+    );
 }
 
 .border-left-primary {
@@ -423,48 +437,6 @@ body {
     }
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --sidebar-bg: #2d3748;
-        --sidebar-border: #4a5568;
-        --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
-        --card-shadow-hover: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.4);
-    }
-
-    body {
-        background-color: #1a202c;
-        color: #e2e8f0;
-    }
-
-    .card {
-        background-color: #2d3748;
-        border-color: #4a5568;
-    }
-
-    .sidebar {
-        background-color: var(--sidebar-bg);
-        border-color: var(--sidebar-border);
-    }
-
-    .sidebar .nav-link {
-        color: #e2e8f0;
-    }
-
-    .sidebar .nav-link:hover {
-        background-color: #4a5568;
-    }
-
-    .table {
-        color: #e2e8f0;
-    }
-
-    .table thead th {
-        background-color: #2d3748;
-        border-color: #4a5568;
-    }
-}
-
 /* Animation classes */
 .fade-in {
     animation: fadeIn 0.3s ease-in;
@@ -479,18 +451,30 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideInLeft {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(0); }
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
 }
 
 @keyframes slideInRight {
-    from { transform: translateX(100%); }
-    to { transform: translateX(0); }
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
 }
 
 /* Print styles */

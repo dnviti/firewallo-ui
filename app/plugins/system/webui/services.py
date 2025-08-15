@@ -410,6 +410,13 @@ class ThemeManager:
                 "background": "#1a202c",
                 "text": "#e2e8f0"
             },
+            "dark": {
+                "name": "Dark",
+                "primary_color": "#667eea",
+                "secondary_color": "#764ba2",
+                "background": "#1a202c",
+                "text": "#e2e8f0"
+            },
             "high_contrast": {
                 "name": "High Contrast",
                 "primary_color": "#000000",

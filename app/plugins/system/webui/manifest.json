@@ -35,11 +35,7 @@
     "file.write"
   ],
   "configuration": {
-    "required": [
-      "enabled",
-      "port",
-      "host"
-    ],
+    "required": ["enabled", "port", "host"],
     "optional": [
       "theme",
       "auto_refresh_interval",
@@ -243,25 +239,8 @@
     }
   ],
   "customization": {
-    "themes": [
-      "default",
-      "dark",
-      "high_contrast",
-      "blue",
-      "green"
-    ],
-    "languages": [
-      "en",
-      "es",
-      "fr",
-      "de",
-      "it",
-      "pt",
-      "ru",
-      "zh",
-      "ja",
-      "ko"
-    ],
+    "themes": ["default", "dark", "high_contrast", "blue", "green"],
+    "languages": ["en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja", "ko"],
     "branding": {
       "allow_custom_logo": true,
       "allow_custom_css": true,
