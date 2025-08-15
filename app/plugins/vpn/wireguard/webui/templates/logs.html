@@ -1,0 +1,266 @@
+{% extends "system/webui/templates/base.html" if has_system_base else "base.html" %}
+
+{% block title %}WireGuard Logs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-file-text me-2"></i>
+            WireGuard Logs
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button type="button" class="btn btn-outline-primary" onclick="refreshLogs()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Refresh
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="clearLogs()">
+                    <i class="bi bi-trash me-1"></i>
+                    Clear
+                </button>
+            </div>
+            <a href="{{ menu_context.plugin_path }}/settings" class="btn btn-outline-secondary">
+                <i class="bi bi-gear me-1"></i>
+                Settings
+            </a>
+        </div>
+    </div>
+
+    <!-- Log Level Filter -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Filter Logs</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="log-level" class="form-label">Log Level</label>
+                            <select class="form-select" id="log-level" onchange="filterLogs()">
+                                <option value="">All Levels</option>
+                                <option value="DEBUG">Debug</option>
+                                <option value="INFO">Info</option>
+                                <option value="WARNING">Warning</option>
+                                <option value="ERROR">Error</option>
+                                <option value="CRITICAL">Critical</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="search-text" class="form-label">Search</label>
+                            <input type="text" class="form-control" id="search-text" placeholder="Search logs..." onkeyup="filterLogs()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">Log Statistics</h6>
+                    <div class="row text-center">
+                        <div class="col">
+                            <span class="badge bg-info" id="total-logs">{{ logs|length if logs else 0 }}</span>
+                            <small class="d-block">Total</small>
+                        </div>
+                        <div class="col">
+                            <span class="badge bg-danger" id="error-logs">0</span>
+                            <small class="d-block">Errors</small>
+                        </div>
+                        <div class="col">
+                            <span class="badge bg-warning" id="warning-logs">0</span>
+                            <small class="d-block">Warnings</small>
+                        </div>
+                        <div class="col">
+                            <span class="badge bg-success" id="filtered-logs">{{ logs|length if logs else 0 }}</span>
+                            <small class="d-block">Filtered</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Display -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Recent Logs</h5>
+                    <small class="text-muted">Last updated: <span id="last-updated">{{ moment().format('YYYY-MM-DD HH:mm:ss') if moment else 'Now' }}</span></small>
+                </div>
+                <div class="card-body p-0">
+                    {% if logs and logs|length > 0 %}
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0" id="logs-table">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th style="width: 150px;">Timestamp</th>
+                                    <th style="width: 80px;">Level</th>
+                                    <th style="width: 120px;">Component</th>
+                                    <th>Message</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr class="log-entry" data-level="{{ log.level|upper if log.level else 'INFO' }}" data-message="{{ log.message|lower if log.message else '' }}">
+                                    <td class="text-nowrap">
+                                        <small>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'Unknown' }}</small>
+                                    </td>
+                                    <td>
+                                        {% set level = log.level|upper if log.level else 'INFO' %}
+                                        {% if level == 'ERROR' or level == 'CRITICAL' %}
+                                        <span class="badge bg-danger">{{ level }}</span>
+                                        {% elif level == 'WARNING' %}
+                                        <span class="badge bg-warning">{{ level }}</span>
+                                        {% elif level == 'DEBUG' %}
+                                        <span class="badge bg-secondary">{{ level }}</span>
+                                        {% else %}
+                                        <span class="badge bg-info">{{ level }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ log.component or 'WireGuard' }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ log.message or 'No message' }}</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-file-text text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">No logs available</h5>
+                        <p class="text-muted">No WireGuard logs have been recorded yet, or logging might be disabled.</p>
+                        <a href="{{ menu_context.plugin_path }}/settings" class="btn btn-outline-primary">
+                            <i class="bi bi-gear me-1"></i>
+                            Check Settings
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allLogs = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize log statistics
+    updateLogStatistics();
+
+    // Store all logs for filtering
+    const logRows = document.querySelectorAll('.log-entry');
+    logRows.forEach(row => {
+        allLogs.push({
+            element: row,
+            level: row.dataset.level,
+            message: row.dataset.message
+        });
+    });
+});
+
+function refreshLogs() {
+    window.location.reload();
+}
+
+async function clearLogs() {
+    if (!confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/logs/clear`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to clear logs: ' + (data.error || 'Unknown error'));
+            }
+        } else {
+            alert('Failed to clear logs');
+        }
+    } catch (error) {
+        console.error('Error clearing logs:', error);
+        alert('Error clearing logs: ' + error.message);
+    }
+}
+
+function filterLogs() {
+    const levelFilter = document.getElementById('log-level').value;
+    const searchText = document.getElementById('search-text').value.toLowerCase();
+
+    let visibleCount = 0;
+
+    allLogs.forEach(log => {
+        let show = true;
+
+        // Filter by level
+        if (levelFilter && log.level !== levelFilter) {
+            show = false;
+        }
+
+        // Filter by search text
+        if (searchText && !log.message.includes(searchText)) {
+            show = false;
+        }
+
+        // Show/hide the row
+        if (show) {
+            log.element.style.display = '';
+            visibleCount++;
+        } else {
+            log.element.style.display = 'none';
+        }
+    });
+
+    // Update filtered count
+    document.getElementById('filtered-logs').textContent = visibleCount;
+}
+
+function updateLogStatistics() {
+    const logRows = document.querySelectorAll('.log-entry');
+    let errorCount = 0;
+    let warningCount = 0;
+
+    logRows.forEach(row => {
+        const level = row.dataset.level;
+        if (level === 'ERROR' || level === 'CRITICAL') {
+            errorCount++;
+        } else if (level === 'WARNING') {
+            warningCount++;
+        }
+    });
+
+    document.getElementById('total-logs').textContent = logRows.length;
+    document.getElementById('error-logs').textContent = errorCount;
+    document.getElementById('warning-logs').textContent = warningCount;
+    document.getElementById('filtered-logs').textContent = logRows.length;
+}
+
+// Auto-refresh logs every 30 seconds
+setInterval(function() {
+    // Only refresh if user hasn't applied filters
+    const levelFilter = document.getElementById('log-level').value;
+    const searchText = document.getElementById('search-text').value;
+
+    if (!levelFilter && !searchText) {
+        refreshLogs();
+    }
+}, 30000);
+</script>
+{% endblock %}

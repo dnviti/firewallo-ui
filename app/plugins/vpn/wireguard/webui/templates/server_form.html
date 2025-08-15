@@ -1,0 +1,455 @@
+{% extends "system/webui/templates/base.html" if has_system_base else
+"base.html" %} {% block title %}{% if server %}Edit Server{% else %}New Server{%
+endif %} - WireGuard{% endblock %} {% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+    >
+        <h1 class="h2">
+            <i class="bi bi-server me-2"></i>
+            {% if server %}Edit Server{% else %}Create New Server{% endif %}
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a
+                href="{{ menu_context.plugin_path }}/servers"
+                class="btn btn-outline-secondary"
+            >
+                <i class="bi bi-arrow-left me-1"></i>
+                Back to Servers
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Server Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form
+                        method="post"
+                        action="{{ menu_context.plugin_path }}/servers/{% if server %}{{ server.id }}{% else %}new{% endif %}"
+                    >
+                        <!-- Basic Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label"
+                                    >Server Name *</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="name"
+                                    name="name"
+                                    value="{{ server.name if server else '' }}"
+                                    placeholder="e.g., Main VPN Server"
+                                    required
+                                />
+                                <div class="form-text">
+                                    A descriptive name for this server
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="description" class="form-label"
+                                    >Description</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="description"
+                                    name="description"
+                                    value="{{ server.description if server else '' }}"
+                                    placeholder="Optional description"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Network Configuration -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            Network Configuration
+                        </h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="endpoint" class="form-label"
+                                    >Public Endpoint *</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="endpoint"
+                                    name="endpoint"
+                                    value="{{ server.endpoint if server else '' }}"
+                                    placeholder="your-server.com or IP address"
+                                    required
+                                />
+                                <div class="form-text">
+                                    Public IP or domain name clients will
+                                    connect to
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="port" class="form-label"
+                                    >Listen Port *</label
+                                >
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    id="port"
+                                    name="port"
+                                    value="{{ server.port if server else '51820' }}"
+                                    min="1"
+                                    max="65535"
+                                    required
+                                />
+                                <div class="form-text">
+                                    UDP port for WireGuard traffic
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="network" class="form-label"
+                                    >VPN Network *</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="network"
+                                    name="network"
+                                    value="{{ server.network if server else '10.0.0.0/24' }}"
+                                    placeholder="10.0.0.0/24"
+                                    required
+                                />
+                                <div class="form-text">
+                                    Private network range for VPN clients
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="interface_name" class="form-label"
+                                    >Interface Name</label
+                                >
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="interface_name"
+                                    name="interface_name"
+                                    value="{{ server.interface_name if server else 'wg0' }}"
+                                    placeholder="wg0"
+                                />
+                                <div class="form-text">
+                                    WireGuard interface name
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DNS Configuration -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            DNS Configuration
+                        </h6>
+
+                        <div class="mb-3">
+                            <label for="dns_servers" class="form-label"
+                                >DNS Servers</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="dns_servers"
+                                name="dns_servers"
+                                value="{{ server.dns_servers if server else '8.8.8.8,8.8.4.4' }}"
+                                placeholder="8.8.8.8,8.8.4.4"
+                            />
+                            <div class="form-text">
+                                Comma-separated list of DNS servers for clients
+                            </div>
+                        </div>
+
+                        <!-- Advanced Settings -->
+                        <h6 class="border-bottom pb-2 mb-3">
+                            Advanced Settings
+                        </h6>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="mtu" class="form-label"
+                                    >MTU Size</label
+                                >
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    id="mtu"
+                                    name="mtu"
+                                    value="{{ server.mtu if server else '1420' }}"
+                                    min="1200"
+                                    max="1500"
+                                />
+                                <div class="form-text">
+                                    Maximum transmission unit size
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="keep_alive" class="form-label"
+                                    >Keep Alive (seconds)</label
+                                >
+                                <input
+                                    type="number"
+                                    class="form-control"
+                                    id="keep_alive"
+                                    name="keep_alive"
+                                    value="{{ server.keep_alive if server else '25' }}"
+                                    min="0"
+                                    max="300"
+                                />
+                                <div class="form-text">
+                                    Persistent keepalive interval (0 = disabled)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Routing Options -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    id="route_all_traffic"
+                                    name="route_all_traffic"
+                                    {%
+                                    if
+                                    server
+                                    and
+                                    server.route_all_traffic
+                                    %}checked{%
+                                    endif
+                                    %}
+                                />
+                                <label
+                                    class="form-check-label"
+                                    for="route_all_traffic"
+                                >
+                                    Route all client traffic through VPN
+                                </label>
+                                <div class="form-text">
+                                    When enabled, all client internet traffic
+                                    will go through the VPN
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    id="enabled"
+                                    name="enabled"
+                                    {%
+                                    if
+                                    not
+                                    server
+                                    or
+                                    server.enabled
+                                    %}checked{%
+                                    endif
+                                    %}
+                                />
+                                <label class="form-check-label" for="enabled">
+                                    Enable server after creation
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                {% if server %}Update Server{% else %}Create
+                                Server{% endif %}
+                            </button>
+                            <a
+                                href="{{ menu_context.plugin_path }}/servers"
+                                class="btn btn-secondary"
+                            >
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Configuration Help
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Network Planning</h6>
+                    <ul class="small">
+                        <li>
+                            Choose a private network range (e.g., 10.0.0.0/24)
+                        </li>
+                        <li>
+                            Ensure the range doesn't conflict with existing
+                            networks
+                        </li>
+                        <li>Server will automatically get the first IP (.1)</li>
+                    </ul>
+
+                    <h6 class="mt-3">Port Configuration</h6>
+                    <ul class="small">
+                        <li>Default WireGuard port is 51820</li>
+                        <li>Make sure the port is open in your firewall</li>
+                        <li>Use a random port for better security</li>
+                    </ul>
+
+                    <h6 class="mt-3">DNS Settings</h6>
+                    <ul class="small">
+                        <li>8.8.8.8, 8.8.4.4 - Google DNS</li>
+                        <li>1.1.1.1, 1.0.0.1 - Cloudflare DNS</li>
+                        <li>9.9.9.9 - Quad9 DNS</li>
+                    </ul>
+
+                    <div class="alert alert-info mt-3" role="alert">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>Tip:</strong> Test connectivity after creating
+                        the server before adding clients.
+                    </div>
+                </div>
+            </div>
+
+            {% if server %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-shield-check me-2"></i>
+                        Server Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div
+                        class="d-flex justify-content-between align-items-center mb-2"
+                    >
+                        <span>Status:</span>
+                        {% if server.enabled %}
+                        <span class="badge bg-success">Active</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactive</span>
+                        {% endif %}
+                    </div>
+                    <div
+                        class="d-flex justify-content-between align-items-center mb-2"
+                    >
+                        <span>Clients:</span>
+                        <span class="badge bg-info"
+                            >{{ server.client_count or 0 }}</span
+                        >
+                    </div>
+                    {% if server.created_at %}
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
+                        <span>Created:</span>
+                        <small
+                            >{{ server.created_at.strftime('%Y-%m-%d %H:%M')
+                            }}</small
+                        >
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Network validation
+        const networkInput = document.getElementById("network");
+        const endpointInput = document.getElementById("endpoint");
+
+        networkInput.addEventListener("blur", function () {
+            const value = this.value.trim();
+            if (value && !value.match(/^\d+\.\d+\.\d+\.\d+\/\d+$/)) {
+                this.classList.add("is-invalid");
+                if (
+                    !this.nextElementSibling ||
+                    !this.nextElementSibling.classList.contains(
+                        "invalid-feedback",
+                    )
+                ) {
+                    const feedback = document.createElement("div");
+                    feedback.className = "invalid-feedback";
+                    feedback.textContent =
+                        "Please enter a valid CIDR network (e.g., 10.0.0.0/24)";
+                    this.parentNode.appendChild(feedback);
+                }
+            } else {
+                this.classList.remove("is-invalid");
+                const feedback =
+                    this.parentNode.querySelector(".invalid-feedback");
+                if (feedback) feedback.remove();
+            }
+        });
+
+        // Endpoint validation
+        endpointInput.addEventListener("blur", function () {
+            const value = this.value.trim();
+            if (value && !value.match(/^[a-zA-Z0-9.-]+$/)) {
+                this.classList.add("is-invalid");
+                if (
+                    !this.nextElementSibling ||
+                    !this.nextElementSibling.classList.contains(
+                        "invalid-feedback",
+                    )
+                ) {
+                    const feedback = document.createElement("div");
+                    feedback.className = "invalid-feedback";
+                    feedback.textContent =
+                        "Please enter a valid hostname or IP address";
+                    this.parentNode.appendChild(feedback);
+                }
+            } else {
+                this.classList.remove("is-invalid");
+                const feedback =
+                    this.parentNode.querySelector(".invalid-feedback");
+                if (feedback) feedback.remove();
+            }
+        });
+
+        // Form submission validation
+        const form = document.querySelector("form");
+        form.addEventListener("submit", function (e) {
+            const requiredFields = this.querySelectorAll("input[required]");
+            let isValid = true;
+
+            requiredFields.forEach((field) => {
+                if (!field.value.trim()) {
+                    field.classList.add("is-invalid");
+                    isValid = false;
+                } else {
+                    field.classList.remove("is-invalid");
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                alert("Please fill in all required fields.");
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,29 +1,48 @@
-{% extends "system/webui/templates/base.html" if has_system_base else "base.html" %}
-
-{% block title %}WireGuard VPN - Dashboard{% endblock %}
-
-{% block content %}
+{% extends "system/webui/templates/base.html" if has_system_base else
+"base.html" %} {% block title %}WireGuard VPN - Dashboard{% endblock %} {% block
+content %}
 <div class="container-fluid">
     <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h1 class="h2">
-                <i class="bi bi-shield-lock me-2"></i>
-                WireGuard VPN
-            </h1>
-            <p class="text-muted">{{ plugin.description }}</p>
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+    >
+        <h1 class="h2">
+            <i class="bi bi-shield-lock me-2"></i>
+            WireGuard VPN
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a
+                href="{{ menu_context.plugin_path }}/servers/new"
+                class="btn btn-primary me-2"
+            >
+                <i class="bi bi-plus-circle me-1"></i>
+                New Server
+            </a>
+            <a
+                href="{{ menu_context.plugin_path }}/clients/new"
+                class="btn btn-secondary"
+            >
+                <i class="bi bi-person-plus me-1"></i>
+                Add Client
+            </a>
         </div>
     </div>
+
+    <p class="text-muted mb-4">{{ plugin.description }}</p>
 
     <!-- Statistics Cards -->
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <h6 class="text-muted mb-2">Total Servers</h6>
-                            <h3 class="mb-0 text-primary">{{ stats.total_servers }}</h3>
+                            <h3 class="mb-0 text-primary">
+                                {{ stats.total_servers }}
+                            </h3>
                         </div>
                         <div class="text-primary">
                             <i class="bi bi-server fs-1"></i>
@@ -35,10 +54,14 @@
         <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <h6 class="text-muted mb-2">Active Servers</h6>
-                            <h3 class="mb-0 text-success">{{ stats.active_servers }}</h3>
+                            <h3 class="mb-0 text-success">
+                                {{ stats.active_servers }}
+                            </h3>
                         </div>
                         <div class="text-success">
                             <i class="bi bi-check-circle fs-1"></i>
@@ -50,10 +73,14 @@
         <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <h6 class="text-muted mb-2">Total Clients</h6>
-                            <h3 class="mb-0 text-info">{{ stats.total_clients }}</h3>
+                            <h3 class="mb-0 text-info">
+                                {{ stats.total_clients }}
+                            </h3>
                         </div>
                         <div class="text-info">
                             <i class="bi bi-people fs-1"></i>
@@ -65,10 +92,14 @@
         <div class="col-md-3">
             <div class="card">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div
+                        class="d-flex justify-content-between align-items-center"
+                    >
                         <div>
                             <h6 class="text-muted mb-2">Active Connections</h6>
-                            <h3 class="mb-0 text-warning">{{ stats.active_connections }}</h3>
+                            <h3 class="mb-0 text-warning">
+                                {{ stats.active_connections }}
+                            </h3>
                         </div>
                         <div class="text-warning">
                             <i class="bi bi-link-45deg fs-1"></i>
@@ -79,19 +110,6 @@
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <ul class="nav nav-tabs mb-3">
-        {% for item in menu_context.items %}
-        <li class="nav-item">
-            <a class="nav-link {% if item.url == '/' %}active{% endif %}"
-               href="{{ menu_context.plugin_path }}{{ item.url }}">
-                <i class="{{ item.icon }} me-1"></i>
-                {{ item.title }}
-            </a>
-        </li>
-        {% endfor %}
-    </ul>
-
     <!-- Quick Actions -->
     <div class="row mb-4">
         <div class="col-12">
@@ -100,15 +118,24 @@
                     <h5 class="card-title mb-0">Quick Actions</h5>
                 </div>
                 <div class="card-body">
-                    <a href="{{ menu_context.plugin_path }}/servers/new" class="btn btn-primary me-2">
-                        <i class="bi bi-plus-circle me-1"></i>
-                        New Server
+                    <a
+                        href="{{ menu_context.plugin_path }}/servers"
+                        class="btn btn-outline-primary me-2"
+                    >
+                        <i class="bi bi-server me-1"></i>
+                        Manage Servers
                     </a>
-                    <a href="{{ menu_context.plugin_path }}/clients/new" class="btn btn-secondary me-2">
-                        <i class="bi bi-person-plus me-1"></i>
-                        Add Client
+                    <a
+                        href="{{ menu_context.plugin_path }}/clients"
+                        class="btn btn-outline-secondary me-2"
+                    >
+                        <i class="bi bi-people me-1"></i>
+                        Manage Clients
                     </a>
-                    <a href="{{ menu_context.plugin_path }}/settings" class="btn btn-outline-secondary">
+                    <a
+                        href="{{ menu_context.plugin_path }}/settings"
+                        class="btn btn-outline-secondary"
+                    >
                         <i class="bi bi-gear me-1"></i>
                         Settings
                     </a>
@@ -121,9 +148,14 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div
+                    class="card-header d-flex justify-content-between align-items-center"
+                >
                     <h5 class="card-title mb-0">WireGuard Servers</h5>
-                    <a href="{{ menu_context.plugin_path }}/servers" class="btn btn-sm btn-outline-primary">
+                    <a
+                        href="{{ menu_context.plugin_path }}/servers"
+                        class="btn btn-sm btn-outline-primary"
+                    >
                         View All
                     </a>
                 </div>
@@ -144,30 +176,42 @@
                                 {% for server in servers[:5] %}
                                 <tr>
                                     <td>
-                                        <a href="{{ menu_context.plugin_path }}/servers/{{ server.id }}">
+                                        <a
+                                            href="{{ menu_context.plugin_path }}/servers/{{ server.id }}"
+                                        >
                                             {{ server.name }}
                                         </a>
                                     </td>
-                                    <td>{{ server.endpoint }}:{{ server.port }}</td>
+                                    <td>
+                                        {{ server.endpoint }}:{{ server.port }}
+                                    </td>
                                     <td>{{ server.network }}</td>
                                     <td>
                                         {% if server.enabled %}
-                                        <span class="badge bg-success">Active</span>
+                                        <span class="badge bg-success"
+                                            >Active</span
+                                        >
                                         {% else %}
-                                        <span class="badge bg-secondary">Inactive</span>
+                                        <span class="badge bg-secondary"
+                                            >Inactive</span
+                                        >
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary"
-                                                onclick="toggleServer('{{ server.id }}')">
+                                        <button
+                                            class="btn btn-sm btn-outline-primary"
+                                            onclick="toggleServer('{{ server.id }}')"
+                                        >
                                             {% if server.enabled %}
                                             <i class="bi bi-pause"></i>
                                             {% else %}
                                             <i class="bi bi-play"></i>
                                             {% endif %}
                                         </button>
-                                        <a href="{{ menu_context.plugin_path }}/servers/{{ server.id }}"
-                                           class="btn btn-sm btn-outline-info">
+                                        <a
+                                            href="{{ menu_context.plugin_path }}/servers/{{ server.id }}"
+                                            class="btn btn-sm btn-outline-info"
+                                        >
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     </td>
@@ -180,7 +224,10 @@
                     <div class="text-center py-4">
                         <i class="bi bi-server fs-1 text-muted"></i>
                         <p class="mt-3 text-muted">No servers configured yet</p>
-                        <a href="{{ menu_context.plugin_path }}/servers/new" class="btn btn-primary">
+                        <a
+                            href="{{ menu_context.plugin_path }}/servers/new"
+                            class="btn btn-primary"
+                        >
                             <i class="bi bi-plus-circle me-1"></i>
                             Create First Server
                         </a>
@@ -202,12 +249,16 @@
                 <div class="card-body">
                     <ul class="list-group list-group-flush">
                         {% for activity in recent_activity[:5] %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <li
+                            class="list-group-item d-flex justify-content-between align-items-center"
+                        >
                             <div>
                                 <i class="{{ activity.icon }} me-2"></i>
                                 {{ activity.description }}
                             </div>
-                            <small class="text-muted">{{ activity.timestamp }}</small>
+                            <small class="text-muted"
+                                >{{ activity.timestamp }}</small
+                            >
                         </li>
                         {% endfor %}
                     </ul>
@@ -217,34 +268,38 @@
     </div>
     {% endif %}
 </div>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block extra_js %}
 <script>
-async function toggleServer(serverId) {
-    try {
-        const response = await fetch(`{{ menu_context.plugin_path }}/servers/${serverId}/toggle`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+    async function toggleServer(serverId) {
+        try {
+            const response = await fetch(
+                `{{ menu_context.plugin_path }}/servers/${serverId}/toggle`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
 
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-                // Reload the page to show updated status
-                window.location.reload();
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Reload the page to show updated status
+                    window.location.reload();
+                } else {
+                    alert(
+                        "Failed to toggle server: " +
+                            (data.error || "Unknown error"),
+                    );
+                }
             } else {
-                alert('Failed to toggle server: ' + (data.error || 'Unknown error'));
+                alert("Failed to toggle server");
             }
-        } else {
-            alert('Failed to toggle server');
+        } catch (error) {
+            console.error("Error toggling server:", error);
+            alert("Error toggling server: " + error.message);
         }
-    } catch (error) {
-        console.error('Error toggling server:', error);
-        alert('Error toggling server: ' + error.message);
     }
-}
 </script>
 {% endblock %}

@@ -31,6 +31,7 @@ class VPNServerResponse(BaseModel):
     name: str
     endpoint: str
     port: int
+    private_key: Optional[str] = None
     public_key: str
     network: str
     dns_servers: List[str]

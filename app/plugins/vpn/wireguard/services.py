@@ -759,6 +759,18 @@ class WireGuardRepository:
     async def update_item(self, collection: str, item_id: str, updates: Dict[str, Any]) -> bool:
         return await self.base_repo.update_item(collection, item_id, updates)
 
+    async def update_server(self, server_id: str, updates: Dict[str, Any]) -> bool:
+        """Update a server with the given data."""
+        return await self.update_item("servers", server_id, updates)
+
+    async def get_server(self, server_id: str) -> Optional[Dict[str, Any]]:
+        """Get a server by ID."""
+        return await self.get_item("servers", server_id)
+
+    async def get_servers(self) -> List[Dict[str, Any]]:
+        """Get all servers."""
+        return await self.base_repo.list_items("servers")
+
     async def delete_item(self, collection: str, item_id: str) -> bool:
         return await self.base_repo.delete_item(collection, item_id)
 

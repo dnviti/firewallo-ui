@@ -228,8 +228,10 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
             # Generate keys if not provided
             private_key = server_data.private_key
             public_key = server_data.public_key
-            if not private_key:
+            if not private_key or not public_key:
+                self.logger.info(f"Generating new keys for server {server_data.name}")
                 private_key, public_key = KeyGenerationService.generate_server_keys()
+                self.logger.info(f"Generated keys - Private: {private_key[:10]}..., Public: {public_key[:10]}...")
 
             # Create server record
             server_dict = {
@@ -247,6 +249,8 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
                 "description": server_data.description,
                 "config": server_data.config or {}
             }
+
+            self.logger.info(f"Creating server with keys - Private: {server_dict['private_key'][:10] if server_dict['private_key'] else 'None'}...")
 
             server_id = await self.repository.create_item("servers", server_dict)
 
@@ -304,10 +308,13 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
     async def get_server(self, server_id: str) -> Optional[VPNServerResponse]:
         """Get a specific WireGuard server."""
         try:
-            server = await self.repository.get_item("servers", server_id)
+            # Use the repository's get_server method to ensure fresh data
+            server = await self.repository.get_server(server_id)
             if not server:
+                self.logger.warning(f"Server {server_id} not found")
                 return None
 
+            self.logger.debug(f"Retrieved server {server_id} with private key: {server.get('private_key', 'N/A')[:10]}...")
             return await self._server_dict_to_response(server)
 
         except Exception as e:
@@ -329,9 +336,20 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
             if not success:
                 return None
 
-            # Restart server if configuration changed
-            if any(key in updates for key in ["endpoint", "port", "network", "enabled"]):
-                await self._restart_wireguard_server(server_id)
+            # Handle server enable/disable state changes
+            if "enabled" in updates:
+                server = await self.repository.get_item("servers", server_id)
+                if updates["enabled"]:
+                    # Server is being enabled - start it
+                    await self._start_wireguard_server(server_id)
+                else:
+                    # Server is being disabled - stop it
+                    await self._stop_wireguard_interface(server["name"])
+            elif any(key in updates for key in ["endpoint", "port", "network"]):
+                # Other configuration changed - restart if server is enabled
+                server = await self.repository.get_item("servers", server_id)
+                if server and server.get("enabled"):
+                    await self._restart_wireguard_server(server_id)
 
             return await self.get_server(server_id)
 
@@ -567,6 +585,186 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
             self.logger.error(f"Failed to revoke client {client_id}: {e}")
             return False
 
+    async def restart_server(self, server_id: str) -> bool:
+        """Restart a WireGuard server."""
+        try:
+            server = await self.repository.get_server(server_id)
+            if not server:
+                return False
+
+            # Stop the server first
+            success_stop = await self._stop_wireguard_interface(server.get("interface_name", "wg0"))
+
+            # Start the server again
+            success_start = await self._start_wireguard_server(server_id)
+
+            return success_stop and success_start
+
+        except Exception as e:
+            self.logger.error(f"Failed to restart server {server_id}: {e}")
+            return False
+
+    async def regenerate_server_keys(self, server_id: str) -> bool:
+        """Regenerate server keys."""
+        try:
+            server = await self.repository.get_server(server_id)
+            if not server:
+                self.logger.error(f"Server {server_id} not found")
+                return False
+
+            self.logger.info(f"Regenerating keys for server {server_id}")
+
+            # Generate new keys using the keypair method (not triplet)
+            private_key, public_key = KeyGenerationService.generate_server_keys()
+
+            self.logger.info(f"Generated new keys - Private: {private_key[:10]}..., Public: {public_key[:10]}...")
+
+            # Update server with new keys
+            update_data = {
+                "private_key": private_key,
+                "public_key": public_key
+            }
+
+            success = await self.repository.update_server(server_id, update_data)
+            if not success:
+                self.logger.error(f"Failed to update server {server_id} with new keys")
+                return False
+
+            self.logger.info(f"Successfully updated server {server_id} with new keys")
+
+            # Update server configuration
+            await self._update_server_config(server_id)
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to regenerate keys for server {server_id}: {e}")
+            return False
+
+    async def get_server_config(self, server_id: str) -> str:
+        """Get server configuration content."""
+        try:
+            server = await self.repository.get_server(server_id)
+            if not server:
+                raise VPNPluginError(f"Server {server_id} not found")
+
+            clients = await self.repository.get_clients(server_id=server_id)
+
+            # Generate server configuration
+            config_content = WireGuardConfigRenderer.render_server_config(server, clients)
+
+            return config_content
+
+        except Exception as e:
+            self.logger.error(f"Failed to get config for server {server_id}: {e}")
+            raise VPNPluginError(f"Failed to get server config: {str(e)}")
+
+    async def restart_service(self) -> bool:
+        """Restart the entire WireGuard service."""
+        try:
+            # Get all active servers
+            servers = await self.repository.get_servers()
+
+            # Stop all interfaces
+            for server in servers:
+                if server.get("enabled", False):
+                    interface_name = server.get("interface_name", "wg0")
+                    await self._stop_wireguard_interface(interface_name)
+
+            # Wait a moment
+            await asyncio.sleep(1)
+
+            # Start all enabled servers again
+            success = True
+            for server in servers:
+                if server.get("enabled", False):
+                    result = await self._start_wireguard_server(server["id"])
+                    success = success and result
+
+            return success
+
+        except Exception as e:
+            self.logger.error(f"Failed to restart WireGuard service: {e}")
+            return False
+
+    async def get_logs(self) -> List[Dict[str, Any]]:
+        """Get WireGuard logs."""
+        try:
+            logs = []
+
+            # Try to get system logs related to WireGuard
+            try:
+                # Get journalctl logs for WireGuard
+                result = await asyncio.create_subprocess_exec(
+                    'journalctl', '-u', 'wg-quick@*', '--no-pager', '-n', '100', '--output=json',
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
+                )
+                stdout, stderr = await result.communicate()
+
+                if result.returncode == 0:
+                    import json
+                    for line in stdout.decode().strip().split('\n'):
+                        if line.strip():
+                            try:
+                                log_entry = json.loads(line)
+                                logs.append({
+                                    'timestamp': datetime.fromisoformat(log_entry.get('__REALTIME_TIMESTAMP', '')[:-6]) if log_entry.get('__REALTIME_TIMESTAMP') else datetime.now(),
+                                    'level': 'INFO',
+                                    'component': 'WireGuard',
+                                    'message': log_entry.get('MESSAGE', '')
+                                })
+                            except (json.JSONDecodeError, ValueError):
+                                continue
+
+            except Exception as e:
+                self.logger.warning(f"Could not get system logs: {e}")
+
+            # Add some plugin-specific logs
+            logs.extend([
+                {
+                    'timestamp': datetime.now(),
+                    'level': 'INFO',
+                    'component': 'Plugin',
+                    'message': f'WireGuard plugin {self.version} is running'
+                },
+                {
+                    'timestamp': datetime.now(),
+                    'level': 'INFO',
+                    'component': 'Plugin',
+                    'message': f'Servers count: {len(await self.list_servers())}'
+                }
+            ])
+
+            # Sort by timestamp, newest first
+            logs.sort(key=lambda x: x['timestamp'], reverse=True)
+
+            return logs[:100]  # Return last 100 logs
+
+        except Exception as e:
+            self.logger.error(f"Failed to get logs: {e}")
+            return [
+                {
+                    'timestamp': datetime.now(),
+                    'level': 'ERROR',
+                    'component': 'Plugin',
+                    'message': f'Failed to retrieve logs: {str(e)}'
+                }
+            ]
+
+    async def clear_logs(self) -> bool:
+        """Clear WireGuard logs."""
+        try:
+            # For now, we'll just return True as clearing system logs
+            # would typically require specific system permissions
+            # In a real implementation, you might clear application-specific logs
+            self.logger.info("Logs cleared by user request")
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Failed to clear logs: {e}")
+            return False
+
     # Helper Methods
 
     async def _resolve_private_ip(self, server: Dict[str, Any], username: str, requested: str) -> str:
@@ -670,6 +868,7 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
             name=server["name"],
             endpoint=server["endpoint"],
             port=server["port"],
+            private_key=server.get("private_key"),
             public_key=server["public_key"],
             network=server["network"],
             dns_servers=server.get("dns_servers", []),

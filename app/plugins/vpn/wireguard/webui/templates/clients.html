@@ -1,0 +1,548 @@
+{% extends "system/webui/templates/base.html" if has_system_base else "base.html" %}
+
+{% block title %}WireGuard Clients{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-people me-2"></i>
+            WireGuard Clients
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ menu_context.plugin_path }}/clients/new" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i>
+                New Client
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div></div>
+                            <h6 class="text-muted mb-2">Total Clients</h6>
+                            <h3 class="mb-0 text-primary">{{ clients|length }}</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Connected</h6>
+                            <h3 class="mb-0 text-success">{{ clients|selectattr("connected")|list|length }}</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-wifi fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Disconnected</h6>
+                            <h3 class="mb-0 text-warning">{{ clients|rejectattr("connected")|list|length }}</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-wifi-off fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Servers</h6>
+                            <h3 class="mb-0 text-info">{{ servers|length }}</h3>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-server fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <label for="server-filter" class="form-label mb-0">Filter by Server:</label>
+                        </div>
+                        <div class="col">
+                            <select class="form-select form-select-sm" id="server-filter" onchange="filterByServer()">
+                                <option value="">All Servers</option>
+                                {% for server in servers %}
+                                <option value="{{ server.id }}" {% if selected_server == server.id %}selected{% endif %}>
+                                    {{ server.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <label for="search-filter" class="form-label mb-0">Search:</label>
+                        </div>
+                        <div class="col">
+                            <input type="text" class="form-control form-control-sm" id="search-filter"
+                                   placeholder="Search by name or email..." onkeyup="searchClients()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Client List</h5>
+                </div>
+                <div class="card-body">
+                    {% if clients %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Server</th>
+                                    <th>IP Address</th>
+                                    <th>Status</th>
+                                    <th>Last Seen</th>
+                                    <th>Transfer</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in clients %}
+                                <tr data-server-id="{{ client.server_id }}" class="client-row">
+                                    <td>
+                                        <strong class="client-name">{{ client.name }}</strong>
+                                        {% if client.description %}
+                                        <br><small class="text-muted">{{ client.description }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="client-email">{{ client.email or 'N/A' }}</td>
+                                    <td>
+                                        {% for server in servers %}
+                                        {% if server.id == client.server_id %}
+                                        <a href="{{ menu_context.plugin_path }}/servers/{{ server.id }}" class="text-decoration-none">
+                                            {{ server.name }}
+                                        </a>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </td>
+                                    <td><code>{{ client.ip_address }}</code></td>
+                                    <td>
+                                        {% if client.connected %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-wifi me-1"></i>Connected
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-wifi-off me-1"></i>Disconnected
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if client.last_seen %}
+                                        <small>{{ client.last_seen.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% else %}</small>
+                                        <small class="text-muted">Never</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>
+                                            <div</small>>↓ {{ client.bytes_received or '0 B' }}</div>
+                                            <div>↑ {{ client.bytes_sent or '0 B' }}</div>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if client.created_at %}
+                                        <small class="text-muted">{{ client.created_at.strftime('%Y-%m-%d') }}</small>
+                                        {% else %}
+                                        <small class="text-muted">N/A</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group" aria-label="Client actions">
+                                            <a href="{{ menu_context.plugin_path }}/clients/{{ client.id }}/config"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Download Configuration">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-info"
+                                                    onclick="showClientDetails('{{ client.id }}')"
+                                                    title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-secondary"
+                                                    onclick="editClient('{{ client.id }}')"
+                                                    title="Edit Client">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="deleteClient('{{ client.id }}')"
+                                                    title="Delete Client">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-people fs-1 text-muted"></i>
+                        <h4 class="mt-3 text-muted">No clients configured</h4>
+                        <p class="text-muted">Create your first WireGuard client to get started.</p>
+                        <a href="{{ menu_context.plugin_path }}/clients/new" class="btn btn-primary">
+                            <i class="bi bi-person-plus me-1"></i>
+                            Create First Client
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions (if clients exist) -->
+    {% if clients %}
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <input type="checkbox" class="form-check-input" id="select-all" onchange="toggleSelectAll()">
+                            <label class="form-check-label ms-2" for="select-all">Select All</label>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-outline-primary btn-sm" onclick="downloadSelectedConfigs()" disabled id="download-btn">
+                                <i class="bi bi-download me-1"></i>
+                                Download Configs
+                            </button>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn btn-outline-danger btn-sm" onclick="deleteSelectedClients()" disabled id="delete-btn">
+                                <i class="bi bi-trash me-1"></i>
+                                Delete Selected
+                            </button>
+                        </div>
+                        <div class="col-auto">
+                            <span class="text-muted" id="selection-count">0 clients selected</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Client Details Modal -->
+<div class="modal fade" id="clientDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Client Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="client-details-content">
+                <!-- Content will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterByServer() {
+    const serverId = document.getElementById('server-filter').value;
+    const url = new URL(window.location);
+
+    if (serverId) {
+        url.searchParams.set('server_id', serverId);
+    } else {
+        url.searchParams.delete('server_id');
+    }
+
+    window.location.href = url.toString();
+}
+
+function searchClients() {
+    const searchTerm = document.getElementById('search-filter').value.toLowerCase();
+    const rows = document.querySelectorAll('.client-row');
+
+    rows.forEach(row => {
+        const name = row.querySelector('.client-name').textContent.toLowerCase();
+        const email = row.querySelector('.client-email').textContent.toLowerCase();
+
+        if (name.includes(searchTerm) || email.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.client-checkbox');
+
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+
+    updateBulkActionButtons();
+}
+
+function updateBulkActionButtons() {
+    const checkboxes = document.querySelectorAll('.client-checkbox:checked');
+    const downloadBtn = document.getElementById('download-btn');
+    const deleteBtn = document.getElementById('delete-btn');
+    const countSpan = document.getElementById('selection-count');
+
+    const count = checkboxes.length;
+
+    if (count > 0) {
+        downloadBtn.disabled = false;
+        deleteBtn.disabled = false;
+        countSpan.textContent = `${count} client${count !== 1 ? 's' : ''} selected`;
+    } else {
+        downloadBtn.disabled = true;
+        deleteBtn.disabled = true;
+        countSpan.textContent = '0 clients selected';
+    }
+}
+
+async function deleteClient(clientId) {
+    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/clients/${clientId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete client: ' + (data.error || 'Unknown error'));
+            }
+        } else {
+            alert('Failed to delete client');
+        }
+    } catch (error) {
+        console.error('Error deleting client:', error);
+        alert('Error deleting client: ' + error.message);
+    }
+}
+
+async function showClientDetails(clientId) {
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/clients/${clientId}/details`);
+
+        if (response.ok) {
+            const data = await response.json();
+            const content = document.getElementById('client-details-content');
+
+            content.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Basic Information</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Name:</strong></td><td>${data.name}</td></tr>
+                            <tr><td><strong>Email:</strong></td><td>${data.email || 'N/A'}</td></tr>
+                            <tr><td><strong>IP Address:</strong></td><td><code>${data.ip_address}</code></td></tr>
+                            <tr><td><strong>Status:</strong></td><td>
+                                <span class="badge bg-${data.connected ? 'success' : 'secondary'}">
+                                    ${data.connected ? 'Connected' : 'Disconnected'}
+                                </span>
+                            </td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Connection Statistics</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Last Seen:</strong></td><td>${data.last_seen || 'Never'}</td></tr>
+                            <tr><td><strong>Bytes Received:</strong></td><td>${data.bytes_received || '0 B'}</td></tr>
+                            <tr><td><strong>Bytes Sent:</strong></td><td>${data.bytes_sent || '0 B'}</td></tr>
+                            <tr><td><strong>Created:</strong></td><td>${data.created_at || 'N/A'}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Public Key</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" value="${data.public_key || 'N/A'}" readonly>
+                            <button class="btn btn-outline-secondary" onclick="copyToClipboard(this.previousElementSibling)">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('clientDetailsModal'));
+            modal.show();
+        } else {
+            alert('Failed to load client details');
+        }
+    } catch (error) {
+        console.error('Error loading client details:', error);
+        alert('Error loading client details: ' + error.message);
+    }
+}
+
+function editClient(clientId) {
+    window.location.href = `{{ menu_context.plugin_path }}/clients/${clientId}/edit`;
+}
+
+function copyToClipboard(element) {
+    element.select();
+    element.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+
+    // Show feedback
+    const button = element.nextElementSibling;
+    const originalIcon = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => {
+        button.innerHTML = originalIcon;
+    }, 2000);
+}
+
+async function downloadSelectedConfigs() {
+    const checkboxes = document.querySelectorAll('.client-checkbox:checked');
+    const clientIds = Array.from(checkboxes).map(cb => cb.value);
+
+    if (clientIds.length === 0) {
+        alert('Please select at least one client');
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/clients/bulk-download`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ client_ids: clientIds })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'wireguard-configs.zip';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert('Failed to download configurations');
+        }
+    } catch (error) {
+        console.error('Error downloading configs:', error);
+        alert('Error downloading configurations: ' + error.message);
+    }
+}
+
+async function deleteSelectedClients() {
+    const checkboxes = document.querySelectorAll('.client-checkbox:checked');
+    const clientIds = Array.from(checkboxes).map(cb => cb.value);
+
+    if (clientIds.length === 0) {
+        alert('Please select at least one client');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to delete ${clientIds.length} client(s)? This action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/clients/bulk-delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ client_ids: clientIds })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete clients: ' + (data.error || 'Unknown error'));
+            }
+        } else {
+            alert('Failed to delete clients');
+        }
+    } catch (error) {
+        console.error('Error deleting clients:', error);
+        alert('Error deleting clients: ' + error.message);
+    }
+}
+
+// Add checkboxes to table rows
+document.addEventListener('DOMContentLoaded', function() {
+    const rows = document.querySelectorAll('.client-row');
+    rows.forEach((row, index) => {
+        const firstCell = row.querySelector('td');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'form-check-input me-2 client-checkbox';
+        checkbox.value = row.getAttribute('data-client-id');
+        checkbox.addEventListener('change', updateBulkActionButtons);
+
+        firstCell.insertBefore(checkbox, firstCell.firstChild);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,546 @@
+{% extends "system/webui/templates/base.html" if has_system_base else "base.html" %}
+
+{% block title %}{{ server.name }} - WireGuard Server{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-server me-2"></i>
+            {{ server.name }}
+            {% if server.enabled %}
+            <span class="badge bg-success ms-2">Active</span>
+            {% else %}
+            <span class="badge bg-secondary ms-2">Inactive</span>
+            {% endif %}
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <button class="btn btn-outline-primary" onclick="toggleServer('{{ server.id }}')">
+                    {% if server.enabled %}
+                    <i class="bi bi-pause me-1"></i>Stop Server
+                    {% else %}
+                    <i class="bi bi-play me-1"></i>Start Server
+                    {% endif %}
+                </button>
+                <a href="{{ menu_context.plugin_path }}/servers/{{ server.id }}/edit" class="btn btn-outline-secondary">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </a>
+            </div>
+            <a href="{{ menu_context.plugin_path }}/servers" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Back to Servers
+            </a>
+        </div>
+    </div>
+
+    <!-- Server Status Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div></div>
+                            <h6 class="text-muted mb-2">Status</h6>
+                            <h4 class="mb-0">
+                                {% if server.enabled %}
+                                <span class="text-success">Running</span>
+                                {% else %}
+                                <span class="text-secondary">Stopped</span>
+                                {% endif %}
+                            </h4>
+                        </div>
+                        <div class="{% if server.enabled %}text-success{% else %}text-secondary{% endif %}">
+                            <i class="bi bi-{% if server.enabled %}check-circle{% else %}pause-circle{% endif %} fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div></div>
+                            <h6 class="text-muted mb-2">Total Clients</h6>
+                            <h4 class="mb-0 text-info">{{ clients|length }}</h4>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Active Connections</h6>
+                            <h4 class="mb-0 text-success">{{ clients|selectattr("connected")|list|length }}</h4>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-link-45deg fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Data Transfer</h6>
+                            <h4 class="mb-0 text-warning">{{ server.total_transfer or "0 B" }}</h4>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-arrow-up-down fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Server Configuration -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Server Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Name:</strong></td>
+                            <td>{{ server.name }}</td>
+                        </tr>
+                        {% if server.description %}
+                        <tr>
+                            <td><strong>Description</tr>:</strong></td>
+                            <td>{{ server.description }}</td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td><strong>Endpoint:</strong></t</tr>d>
+                            <td><code>{{ server.endpoint }}:{{ server.port }}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Network</tr>:</strong></td>
+                            <td><code>{{ server.network }}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Interface:</strong></td>
+                            <td><code>{{ server.interface_name or 'wg0' }}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>DNS Servers:</strong></td>
+                            <td><code>{{ server.dns_servers or 'N/A' }}</code></td>
+                        </tr>
+                        <tr>
+                            <td><strong>MTU:</strong></td>
+                            <td>{{ server.mtu or '1420' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Keep</tr> Alive:</strong></td>
+                            <td>{{ server.keep_alive or '25' }}s</td>
+                        </tr>
+                        {% if server.created_at %}
+                        <tr>
+                            <td><strong>Created:</strong></td>
+                            <td>{{ server.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Server Keys -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-key me-2"></i>
+                        Server Keys
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Public Key:</strong></label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace {% if not server.public_key or server.public_key == 'N/A' %}is-invalid{% endif %}"
+                                   id="server-public-key" value="{{ server.public_key or 'N/A' }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('server-public-key')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Share this public key with clients that need to connect</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Private Key:</strong></label>
+                        {% if not server.private_key or server.private_key == 'N/A' %}
+                        <div class="alert alert-warning d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>
+                                <strong>Missing Private Key!</strong> This server doesn't have a valid private key.
+                                <button class="btn btn-warning btn-sm ms-2" onclick="regenerateKeys('{{ server.id }}')">
+                                    <i class="bi bi-key me-1"></i>
+                                    Generate Keys Now
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="input-group">
+                            <input type="password" class="form-control font-monospace {% if not server.private_key or server.private_key == 'N/A' %}is-invalid{% endif %}"
+                                   id="server-private-key" value="{{ server.private_key or 'N/A' }}" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="toggleKeyVisibility('server-private-key')">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('server-private-key')">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Keep this private key secure and never share it</div>
+                    </div>
+
+                    <button class="btn btn-outline-warning btn-sm" onclick="regenerateKeys('{{ server.id }}')">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Regenerate Keys
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clients Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people me-2"></i>
+                        Connected Clients
+                    </h5>
+                    <a href="{{ menu_context.plugin_path }}/clients/new?server_id={{ server.id }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>
+                        Add Client
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if clients %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>IP Address</th>
+                                    <th>Status</th>
+                                    <th>Last Seen</th>
+                                    <th>Transfer</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for client in clients %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ client.name }}</strong>
+                                    </td>
+                                    <td>{{ client.email or 'N/A' }}</td>
+                                    <td><code>{{ client.ip_address }}</code></td>
+                                    <td>
+                                        {% if client.connected %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Connected
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>Disconnected
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if client.last_seen %}
+                                        <small>{{ client.last_seen.strftime('%Y-%m-%d %H:%M') }}</small>
+                                        {% else %}
+                                        <small class="text-muted">Never</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>
+                                            ↓ {{ client.bytes_received or '0 B' }}<br>
+                                            ↑ {{ client.bytes_sent or '0 B' }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ menu_context.plugin_path }}/clients/{{ client.id }}/config"
+                                               class="btn btn-sm btn-outline-info" title="Download Config">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    onclick="deleteClient('{{ client.id }}')" title="Delete Client">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-people fs-1 text-muted"></i>
+                        <h5 class="mt-3 text-muted">No clients configured</h5>
+                        <p class="text-muted">Add your first client to start using this VPN server.</p>
+                        <a href="{{ menu_context.plugin_path }}/clients/new?server_id={{ server.id }}" class="btn btn-primary">
+                            <i class="bi bi-person-plus me-1"></i>
+                            Add First Client
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ menu_context.plugin_path }}/clients/new?server_id={{ server.id }}" class="btn btn-primary me-2">
+                        <i class="bi bi-person-plus me-1"></i>
+                        Add Client
+                    </a>
+                    <button class="btn btn-outline-primary me-2" onclick="downloadServerConfig('{{ server.id }}')">
+                        <i class="bi bi-download me-1"></i>
+                        Download Server Config
+                    </button>
+                    <button class="btn btn-outline-secondary me-2" onclick="restartServer('{{ server.id }}')">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Restart Server
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteServer('{{ server.id }}')">
+                        <i class="bi bi-trash me-1"></i>
+                        Delete Server
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function toggleServer(serverId) {
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/servers/${serverId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to toggle server: ' + (data.error || 'Unknown error'));
+            }
+        } else {
+            alert('Failed to toggle server');
+        }
+    } catch (error) {
+        console.error('Error toggling server:', error);
+        alert('Error toggling server: ' + error.message);
+    }
+}
+
+async function deleteServer(serverId) {
+    if (!confirm('Are you sure you want to delete this server? All associated clients will also be deleted. This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/servers/${serverId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                window.location.href = '{{ menu_context.plugin_path }}/servers';
+            } else {
+                alert('Failed to delete server: ' + (data.error || 'Unknown error'));
+            }
+        } else {
+            alert('Failed to delete server');
+        }
+    } catch (error) {
+        console.error('Error deleting server:', error);
+        alert('Error deleting server: ' + error.message);
+    }
+}
+
+async function deleteClient(clientId) {
+    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/clients/${clientId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete client: ' + (data.error || 'Unknown error'));
+            }
+        } else {
+            alert('Failed to delete client');
+        }
+    } catch (error) {
+        console.error('Error deleting client:', error);
+        alert('Error deleting client: ' + error.message);
+    }
+}
+
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    element.select();
+    element.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+
+    // Show feedback
+    const button = element.nextElementSibling;
+    const originalIcon = button.innerHTML;
+    button.innerHTML = '<i class="bi bi-check"></i>';
+    setTimeout(() => {
+        button.innerHTML = originalIcon;
+    }, 2000);
+}
+
+function toggleKeyVisibility(elementId) {
+    const element = document.getElementById(elementId);
+    const button = element.parentNode.querySelector('.btn:nth-child(2)');
+
+    if (element.type === 'password') {
+        element.type = 'text';
+        button.innerHTML = '<i class="bi bi-eye-slash"></i>';
+    } else {
+        element.type = 'password';
+        button.innerHTML = '<i class="bi bi-eye"></i>';
+    }
+}
+
+async function regenerateKeys(serverId) {
+    if (!confirm('Are you sure you want to regenerate the server keys? All existing client configurations will need to be updated.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/servers/${serverId}/regenerate-keys`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Show success message with detailed information
+                alert('🔑 Server keys regenerated successfully!\n\n⚠️ Important: All existing client configurations will need to be updated with the new server public key.\n\nThe page will now reload to show the new keys.');
+
+                // Force reload without cache to get fresh data
+                window.location.reload(true);
+            } else {
+                alert('❌ Failed to regenerate keys: ' + (data.error || 'Unknown error'));
+            }
+        } else {
+            alert('❌ Failed to regenerate keys - Server returned error ' + response.status);
+        }
+    } catch (error) {
+        console.error('Error regenerating keys:', error);
+        alert('❌ Network error while regenerating keys: ' + error.message);
+    }
+}
+
+async function restartServer(serverId) {
+    if (!confirm('Are you sure you want to restart this server? This will temporarily disconnect all clients.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/servers/${serverId}/restart`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                alert('Server restarted successfully.');
+                window.location.reload();
+            } else {
+                alert('Failed to restart server: ' + (data.error || 'Unknown error'));
+            }
+        } else {
+            alert('Failed to restart server');
+        }
+    } catch (error) {
+        console.error('Error restarting server:', error);
+        alert('Error restarting server: ' + error.message);
+    }
+}
+
+async function downloadServerConfig(serverId) {
+    try {
+        const response = await fetch(`{{ menu_context.plugin_path }}/servers/${serverId}/config`);
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `{{ server.name }}.conf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } else {
+            alert('Failed to download server configuration');
+        }
+    } catch (error) {
+        console.error('Error downloading config:', error);
+        alert('Error downloading configuration: ' + error.message);
+    }
+}
+</script>
+{% endblock %}
