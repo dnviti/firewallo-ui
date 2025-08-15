@@ -2,7 +2,17 @@
 
 Firewallo is a comprehensive network management platform built around an extensible plugin framework. While it includes WireGuard VPN management as a core plugin, Firewallo's true power lies in its ability to integrate multiple network technologies through a unified API and management interface. Built with FastAPI and designed for scalability, Firewallo offers both standalone operation and enterprise-grade features.
 
-## Overview
+## 📚 Documentation Structure
+
+### Quick Navigation
+
+- **[Architecture Documentation](./architecture/)** - System design and database architecture
+- **[Plugin Documentation](./plugins/)** - Plugin framework, development, and examples
+- **[WebUI Documentation](./webui/)** - Web interface implementation and theming
+- **[Testing Documentation](./testing/)** - Testing guides and summaries
+- **[Developer Guides](./guides/)** - Tutorials and best practices
+
+## 🎯 Overview
 
 Firewallo provides a unified platform for network management through:
 
@@ -14,9 +24,11 @@ Firewallo provides a unified platform for network management through:
 - **Hot-Reload Support** - Dynamic plugin loading without application restarts
 - **Unified Interface** - Single API for managing diverse network technologies
 
-## Architecture Diagrams
+## 🏗️ Architecture
 
-### Application Architecture
+### System Architecture Diagrams
+
+#### Application Architecture
 ![Firewallo Application Architecture](images/Firewallo-Application.jpg)
 
 The application follows a clean, modular architecture with clear separation of concerns:
@@ -25,7 +37,7 @@ The application follows a clean, modular architecture with clear separation of c
 - **Repository Layer** - Data access abstraction
 - **Plugin System** - Modular components for different VPN technologies
 
-### Base Infrastructure
+#### Base Infrastructure
 ![Firewallo Base Infrastructure](images/Firewallo-Base.jpg)
 
 The base infrastructure demonstrates the core components:
@@ -34,7 +46,7 @@ The base infrastructure demonstrates the core components:
 - **Authentication System** - JWT-based security
 - **Configuration Management** - Dynamic config generation
 
-### Application Manifest
+#### Application Manifest
 ![Firewallo Manifest](images/Firewallo-Manifest.jpg)
 
 The application manifest shows the complete deployment structure:
@@ -43,7 +55,7 @@ The application manifest shows the complete deployment structure:
 - **Service Dependencies** - Clear dependency management
 - **Scaling Considerations** - Designed for horizontal scaling
 
-### Remote Management
+#### Remote Management
 ![Firewallo Remote](images/Firewallo-Remote.jpg)
 
 Remote management capabilities include:
@@ -52,7 +64,55 @@ Remote management capabilities include:
 - **Monitoring Integration** - Built-in monitoring hooks
 - **Multi-Node Support** - Distributed deployment support
 
-## Key Features
+### Architecture Documentation
+
+- 📖 **[Clean Architecture Guide](./architecture/CLEAN_ARCHITECTURE.md)** - Clean architecture principles and implementation
+- 🗄️ **[Database Architecture](./architecture/DATABASE_ARCHITECTURE.md)** - Complete database design and structure
+
+## 🔌 Plugin System
+
+The plugin framework is the core of Firewallo's extensibility, providing a standardized way to extend functionality.
+
+### Plugin Categories
+
+- **VPN Plugins** (`plugins.vpn.*`) - VPN server and client management
+- **Firewall Plugins** (`plugins.firewall.*`) - Firewall rule and policy management
+- **Monitoring Plugins** (`plugins.monitoring.*`) - System and network monitoring
+- **Network Plugins** (`plugins.network.*`) - DNS, DHCP, and other network services
+- **Security Plugins** (`plugins.security.*`) - Security tools and intrusion detection
+
+### Plugin Documentation
+
+- 🔧 **[Plugin Framework](./plugins/FRAMEWORK.md)** - Core framework documentation
+- 👨‍💻 **[Development Guide](./plugins/DEVELOPMENT.md)** - How to develop custom plugins
+- 📚 **[Plugin Examples](./plugins/EXAMPLES.md)** - Example implementations
+- 📦 **[Installation Guide](./plugins/INSTALLATION.md)** - Installing and managing plugins
+- 🔄 **[Migration Guide](./plugins/MIGRATION.md)** - Plugin migration strategies
+- 📋 **[Menu System](./plugins/MENU_SYSTEM.md)** - Plugin menu integration
+- 🎨 **[WebUI Themes](./plugins/WEBUI_THEMES.md)** - Plugin theming support
+- 📊 **[Integration Summary](./plugins/FRAMEWORK_INTEGRATION_SUMMARY.md)** - Framework integration overview
+- 🌐 **[WebUI Summary](./plugins/WEBUI_SUMMARY.md)** - Plugin WebUI integration
+
+## 🌐 Web Interface
+
+Firewallo includes a modern web interface for managing the platform and its plugins.
+
+### WebUI Documentation
+
+- 🚀 **[WebUI Implementation](./webui/IMPLEMENTATION.md)** - Technical implementation details
+- 📖 **[WebUI README](./webui/README.md)** - WebUI overview and setup
+- 🎨 **[Theme Guide](./webui/THEME_GUIDE.md)** - Creating and customizing themes
+
+## 🧪 Testing
+
+Comprehensive testing documentation for ensuring quality and reliability.
+
+### Testing Documentation
+
+- ✅ **[Testing Guide](./testing/README.md)** - Complete testing documentation
+- 🌐 **[WebUI Tests](./testing/WEBUI_TESTS_SUMMARY.md)** - WebUI testing summary
+
+## 🚀 Key Features
 
 ### 🔒 Authentication & Security
 - **JWT Authentication** - Secure token-based authentication
@@ -86,15 +146,7 @@ Remote management capabilities include:
 - **Data Migration** - Built-in migration tools for database structure updates
 - **Backup Support** - Automatic backup creation during migrations
 
-### 🔌 Modular Plugin System
-- **VPN Plugins** - Extensible support for different VPN technologies (WireGuard, OpenVPN, IPSec)
-- **Firewall Plugins** - Support for various firewall systems (iptables, nftables, pfSense)
-- **Monitoring Plugins** - Integration with monitoring solutions (Prometheus, Grafana, Zabbix)
-- **Network Tool Plugins** - DNS, DHCP, Load Balancer, and Proxy management
-- **Custom Plugins** - Framework for developing custom network management solutions
-- **Plugin Registry** - Centralized repository for discovering and installing plugins
-
-## API Documentation
+## 📡 API Documentation
 
 Firewallo provides a comprehensive REST API with automatic documentation available at `/api/docs` when running the application.
 
@@ -116,12 +168,11 @@ Firewallo provides a comprehensive REST API with automatic documentation availab
 - `GET /api/firewall/{plugin}/rules/` - List firewall rules
 - `POST /api/monitoring/{plugin}/alerts/` - Create monitoring alert
 
-## Database Architecture
+## 🗂️ Database Structure
 
 Firewallo uses a modular database structure organized into three main sections:
 
 ### Plugins Section (`plugins.*`)
-Stores all plugin-related data with hierarchical organization:
 ```
 plugins/
 ├── vpn/
@@ -152,7 +203,6 @@ plugins/
 ```
 
 ### Core Section (`core.*`)
-Contains application-level functionality:
 ```
 core/
 ├── system/
@@ -161,7 +211,6 @@ core/
 ```
 
 ### Authentication Section (`auth.*`)
-Handles user authentication and authorization:
 ```
 auth/
 ├── users[]
@@ -171,36 +220,9 @@ auth/
     └── assignments[]
 ```
 
-For detailed database architecture information, see [DATABASE_ARCHITECTURE.md](DATABASE_ARCHITECTURE.md).
+For detailed database architecture information, see [Database Architecture Documentation](./architecture/DATABASE_ARCHITECTURE.md).
 
-## Plugin Framework
-
-Firewallo's plugin framework is the core of its extensibility. The framework provides:
-
-- **Standardized Interfaces** - Common base classes for different plugin categories
-- **Automatic Discovery** - Dynamic plugin loading and registration
-- **Dependency Management** - Automatic handling of plugin dependencies
-- **Hot-Reload Support** - Install and enable plugins without restarting
-- **Security Validation** - Plugin validation and permission management
-- **External Installation** - Install plugins from Git repositories, packages, or registries
-
-### Plugin Categories
-
-- **VPN Plugins** (`plugins.vpn.*`) - VPN server and client management
-- **Firewall Plugins** (`plugins.firewall.*`) - Firewall rule and policy management
-- **Monitoring Plugins** (`plugins.monitoring.*`) - System and network monitoring
-- **Network Plugins** (`plugins.network.*`) - DNS, DHCP, and other network services
-- **Security Plugins** (`plugins.security.*`) - Security tools and intrusion detection
-
-### Plugin Development
-
-For detailed information on developing plugins, see:
-- [Plugin Framework Documentation](PLUGIN_FRAMEWORK.md)
-- [Plugin Development Guide](PLUGIN_DEVELOPMENT.md)
-- [Plugin Examples](PLUGIN_EXAMPLES.md)
-- [Plugin Installation Guide](PLUGIN_INSTALLATION.md)
-
-## Installation & Deployment
+## 💻 Installation & Deployment
 
 ### Docker Deployment (Recommended)
 
@@ -250,9 +272,7 @@ MONGO_URI=mongodb://localhost:27017  # if using MongoDB
 MONGO_DB_NAME=firewallo  # if using MongoDB
 ```
 
-## Usage Examples
-
-## Usage Examples
+## 📝 Usage Examples
 
 ### Installing and Managing Plugins
 
@@ -311,7 +331,7 @@ curl -X POST "http://localhost:8000/api/firewall/iptables/rules/" \
   }'
 ```
 
-## Development
+## 👨‍💻 Development
 
 ### Project Structure
 
@@ -326,7 +346,13 @@ firewallo-ui/
 │   ├── plugins/             # Plugin system
 │   ├── services/            # Business logic services
 │   └── users/               # User management
-├── documentation/           # Documentation files
+├── docs/                    # Documentation
+│   ├── architecture/        # Architecture documentation
+│   ├── plugins/            # Plugin documentation
+│   ├── webui/              # WebUI documentation
+│   ├── testing/            # Testing documentation
+│   ├── guides/             # Developer guides
+│   └── images/             # Documentation images
 ├── docker-compose.yaml      # Docker deployment
 ├── Dockerfile              # Container definition
 └── requirements.txt        # Python dependencies
@@ -349,7 +375,9 @@ firewallo-ui/
 4. Add tests if applicable
 5. Submit a pull request
 
-## Configuration
+See [CONTRIBUTING.md](../CONTRIBUTING.md) for detailed contribution guidelines.
+
+## ⚙️ Configuration
 
 ### Default Credentials
 - **Username**: `admin@firewallo.io`
@@ -364,7 +392,7 @@ Configure allowed origins via the `CORS_LIST` environment variable:
 ["http://127.0.0.1", "http://localhost", "https://your-domain.com"]
 ```
 
-## Monitoring & Maintenance
+## 📊 Monitoring & Maintenance
 
 ### Database Migration
 Upgrade database structure when needed:
@@ -380,18 +408,20 @@ The application exposes health information through the API:
 ### Backup
 Regular database backups are recommended, especially before migrations. The migration tool automatically creates backups.
 
-## Support & Documentation
+## 📚 Additional Resources
 
+### Internal Documentation
+- **[Architecture Docs](./architecture/)** - System design and architecture
+- **[Plugin Development](./plugins/)** - Complete plugin documentation
+- **[WebUI Documentation](./webui/)** - Web interface documentation
+- **[Testing Guides](./testing/)** - Testing documentation
+
+### External Resources
 - **API Documentation**: Available at `/api/docs` when running
-- **Plugin Framework**: [PLUGIN_FRAMEWORK.md](PLUGIN_FRAMEWORK.md)
-- **Plugin Development**: [PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md)
-- **Plugin Examples**: [PLUGIN_EXAMPLES.md](PLUGIN_EXAMPLES.md)
-- **Plugin Installation**: [PLUGIN_INSTALLATION.md](PLUGIN_INSTALLATION.md)
-- **Database Architecture**: [DATABASE_ARCHITECTURE.md](DATABASE_ARCHITECTURE.md)
 - **Source Code**: Available in GitLab repository
 - **Docker Images**: Available at `registry.gitlab.com/pietromb/firewallo-ui`
 
-## License
+## 📄 License
 
 Please refer to the repository license file for licensing information.
 
