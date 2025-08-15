@@ -39,6 +39,13 @@
                 background-color: #e9ecef;
                 border-radius: 0.375rem;
             }
+            /* Force white text color on hover for navbar links in light theme */
+            nav.navbar.navbar-dark.bg-primary
+                .navbar-nav
+                .nav-item
+                .nav-link:hover {
+                color: #fff !important;
+            }
             .card {
                 box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
                 border: 1px solid rgba(0, 0, 0, 0.125);
@@ -535,6 +542,37 @@
 
             // Highlight current page in navigation
             document.addEventListener("DOMContentLoaded", function () {
+                // Force light theme by removing dark theme preference from localStorage
+                if (localStorage.getItem("theme") === "dark") {
+                    console.log(
+                        "Found 'dark' theme in localStorage, removing to enforce default light theme.",
+                    );
+                    localStorage.removeItem("theme");
+                }
+
+                // Theme Debugging
+                const prefersDark = window.matchMedia(
+                    "(prefers-color-scheme: dark)",
+                ).matches;
+                console.log("Browser prefers dark color scheme:", prefersDark);
+
+                const bodyBgColor = getComputedStyle(
+                    document.body,
+                ).backgroundColor;
+                const bodyTextColor = getComputedStyle(document.body).color;
+                console.log("Computed body background color:", bodyBgColor);
+                console.log("Computed body text color:", bodyTextColor);
+
+                // Simple heuristic to guess theme based on body background color
+                // This assumes light theme background is closer to white and dark closer to black
+                const isLikelyDarkTheme =
+                    bodyBgColor === "rgb(26, 32, 44)" ||
+                    bodyBgColor === "#1a202c"; // Matches --background-color for dark
+                console.log(
+                    "Is currently likely dark theme based on body background?",
+                    isLikelyDarkTheme,
+                );
+
                 const currentPath = window.location.pathname;
                 const navLinks = document.querySelectorAll(".nav-link");
 

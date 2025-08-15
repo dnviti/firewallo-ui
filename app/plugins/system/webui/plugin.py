@@ -623,7 +623,7 @@ class WebUIPlugin(BasePlugin):
             "config": self.config,
             "version": self.version,
             "theme": self.config.get("theme", "default"),
-            "dark_mode": self.config.get("enable_dark_mode", False),
+            "dark_mode": self.config.get("theme", "default") == "dark", # Use configured theme to determine dark mode
             "notifications": self.config.get("enable_notifications", True)
         }
 
