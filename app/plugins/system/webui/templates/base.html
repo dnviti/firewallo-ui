@@ -19,286 +19,7 @@
         <!-- Custom CSS -->
         <link rel="stylesheet" href="/static/css/custom.css" />
 
-        <!-- Inline CSS -->
-        <style>
-            .sidebar {
-                min-height: calc(100vh - 56px);
-                background-color: var(
-                    --sidebar-bg,
-                    #f8f9fa
-                ); /* Default to light for non-dark themes */
-                border-right: 1px solid var(--sidebar-border-color, #dee2e6);
-            }
-            .main-content {
-                min-height: calc(100vh - 56px);
-            }
-            .navbar-brand {
-                font-weight: 600;
-            }
-            .nav-link:hover {
-                background-color: #e9ecef;
-                border-radius: 0.375rem;
-            }
-            /* Force white text color on hover for navbar links in light theme */
-            nav.navbar.navbar-dark.bg-primary
-                .navbar-nav
-                .nav-item
-                .nav-link:hover {
-                color: #fff !important;
-            }
-            .card {
-                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-                border: 1px solid rgba(0, 0, 0, 0.125);
-            }
-            .status-badge {
-                font-size: 0.75rem;
-                padding: 0.25rem 0.5rem;
-            }
-        </style>
-
-        <!-- Dark Mode Styles -->
-        <style>
-            @media (prefers-color-scheme: dark) {
-                :root {
-                    --primary-color: #764ba2;
-                    --secondary-color: #667eea;
-                    --text-color: #e2e8f0;
-                    --text-muted: #a0aec0;
-                    --background-color: #1a202c;
-                    --card-bg: #2d3748;
-                    --border-color: #4a5568;
-                    --header-bg: #2d3748;
-                    --header-border-color: #4a5568;
-                    --sidebar-bg: #2d3748;
-                    --sidebar-border-color: #4a5568;
-                    --nav-link-color: #a0aec0;
-                    --main-content-bg: #1a202c;
-                    --card-title-color: #e2e8f0;
-                    --stat-value-color: #e2e8f0;
-                    --activity-content-bg: #2c3440;
-                    --button-bg: #4a5568;
-                    --button-text: #e2e8f0;
-                    --table-bg: #2d3748;
-                    --table-border-color: #4a5568;
-                    --table-header-bg: #1a202c;
-                    --table-text: #e2e8f0;
-                    --input-bg: #374151;
-                    --input-border: #4a5568;
-                    --input-text: #e2e8f0;
-                    --modal-bg: #2d3748;
-                    --modal-header-bg: #1a202c;
-                    --modal-border: #4a5568;
-                    --modal-text: #e2e8f0;
-                }
-
-                body {
-                    background: var(--background-color) !important;
-                    color: var(--text-color) !important;
-                }
-
-                .header {
-                    background: var(--header-bg) !important;
-                    border-bottom-color: var(--header-border-color) !important;
-                }
-
-                .brand-text {
-                    color: var(--text-color) !important;
-                }
-
-                .sidebar {
-                    background: var(--sidebar-bg) !important;
-                    border-right-color: var(--sidebar-border-color) !important;
-                }
-
-                .nav-section-title {
-                    color: var(--text-muted) !important;
-                    border-bottom-color: var(--border-color) !important;
-                }
-
-                .nav-link {
-                    color: var(--nav-link-color) !important;
-                }
-
-                .nav-link:hover {
-                    background: var(--primary-gradient) !important;
-                    color: #fff !important;
-                }
-
-                .nav-link.active {
-                    background: var(--primary-gradient) !important;
-                    color: #fff !important;
-                }
-
-                .main-content {
-                    background: var(--main-content-bg) !important;
-                }
-
-                .dashboard-card {
-                    background: var(--card-bg) !important;
-                }
-
-                .card-header-custom {
-                    border-bottom-color: var(--border-color) !important;
-                }
-
-                .card-title {
-                    color: var(--card-title-color) !important;
-                }
-
-                .stat-card {
-                    background: var(--card-bg) !important;
-                }
-
-                .stat-value {
-                    color: var(--stat-value-color) !important;
-                }
-
-                .stat-label {
-                    color: var(--text-muted) !important;
-                }
-
-                .activity-timeline::before {
-                    background: var(--border-color) !important;
-                }
-
-                .activity-content {
-                    background: var(--activity-content-bg) !important;
-                    border-color: var(--border-color) !important;
-                }
-
-                .activity-title {
-                    color: var(--text-color) !important;
-                }
-
-                .activity-time {
-                    color: var(--text-muted) !important;
-                }
-
-                .quick-action-btn {
-                    background: var(--card-bg) !important;
-                    border-color: var(--border-color) !important;
-                    color: var(--text-color) !important;
-                }
-
-                .quick-action-btn:hover {
-                    color: #fff !important;
-                }
-
-                /* Adjustments for Bootstrap components in dark mode */
-                .btn {
-                    background-color: var(--button-bg) !important;
-                    color: var(--button-text) !important;
-                    border-color: var(--border-color) !important;
-                }
-                .btn-primary,
-                .btn-secondary,
-                .btn-success,
-                .btn-danger,
-                .btn-warning,
-                .btn-info {
-                    background-color: var(
-                        --primary-color
-                    ) !important; /* Use primary color for main buttons */
-                    color: #fff !important;
-                    border-color: var(--primary-color) !important;
-                }
-                .btn-outline-primary,
-                .btn-outline-secondary,
-                .btn-outline-success,
-                .btn-outline-danger,
-                .btn-outline-warning,
-                .btn-outline-info {
-                    border-color: var(--primary-color) !important;
-                    color: var(--primary-color) !important;
-                }
-                .btn-outline-primary:hover,
-                .btn-outline-secondary:hover,
-                .btn-outline-success:hover,
-                .btn-outline-danger:hover,
-                .btn-outline-warning:hover,
-                .btn-outline-info:hover {
-                    background-color: var(--primary-color) !important;
-                    color: #fff !important;
-                }
-                .btn-light,
-                .btn-dark {
-                    background-color: var(--card-bg) !important;
-                    color: var(--text-color) !important;
-                    border-color: var(--border-color) !important;
-                }
-                .btn-link {
-                    color: var(--button-text) !important;
-                }
-                .btn-link:hover {
-                    color: var(--primary-color) !important;
-                }
-
-                .dropdown-menu {
-                    background-color: var(--card-bg) !important;
-                    border-color: var(--border-color) !important;
-                }
-                .dropdown-item {
-                    color: var(--text-color) !important;
-                }
-                .dropdown-item:hover {
-                    background-color: var(--activity-content-bg) !important;
-                    color: var(--primary-color) !important;
-                }
-                .dropdown-header {
-                    color: var(--text-muted) !important;
-                }
-                .dropdown-divider {
-                    border-top-color: var(--border-color) !important;
-                }
-
-                .table {
-                    --bs-table-bg: var(--table-bg) !important;
-                    --bs-table-color: var(--table-text) !important;
-                    --bs-table-border-color: var(
-                        --table-border-color
-                    ) !important;
-                }
-                .table th {
-                    background-color: var(--table-header-bg) !important;
-                    color: var(--table-text) !important;
-                }
-                .table-striped tbody tr:nth-of-type(odd) {
-                    background-color: var(--activity-content-bg) !important;
-                }
-                .form-control,
-                .form-select {
-                    background-color: var(--input-bg) !important;
-                    border-color: var(--input-border) !important;
-                    color: var(--input-text) !important;
-                }
-                .form-control::placeholder {
-                    color: var(--text-muted) !important;
-                }
-                .input-group-text {
-                    background-color: var(--input-bg) !important;
-                    border-color: var(--input-border) !important;
-                    color: var(--input-text) !important;
-                }
-                .modal-content {
-                    background-color: var(--modal-bg) !important;
-                    border-color: var(--modal-border) !important;
-                    color: var(--modal-text) !important;
-                }
-                .modal-header {
-                    background-color: var(--modal-header-bg) !important;
-                    border-bottom-color: var(--modal-border) !important;
-                }
-                .modal-title {
-                    color: var(--modal-text) !important;
-                }
-                .modal-footer {
-                    border-top-color: var(--modal-border) !important;
-                }
-                .btn-close {
-                    filter: invert(1) grayscale(100%) brightness(200%) !important; /* Adjust for visibility */
-                }
-            }
-        </style>
+        <!-- Theme variables will be handled by custom.css -->
 
         {% block extra_head %}{% endblock %}
     </head>
@@ -349,6 +70,17 @@
                     </ul>
 
                     <ul class="navbar-nav">
+                        <!-- Theme Toggle -->
+                        <li class="nav-item">
+                            <button
+                                id="theme-toggle"
+                                class="nav-link btn theme-toggle"
+                                type="button"
+                                title="Toggle theme"
+                            >
+                                <i id="theme-icon" class="bi bi-moon"></i>
+                            </button>
+                        </li>
                         <li class="nav-item dropdown">
                             <a
                                 class="nav-link dropdown-toggle"
@@ -529,50 +261,61 @@
         <!-- Common JavaScript -->
         <script src="/static/js/common.js"></script>
 
-        <!-- Page JavaScript -->
+        <!-- Theme Toggle Script -->
         <script>
-            // Auto-dismiss alerts after 5 seconds
-            setTimeout(function () {
-                const alerts = document.querySelectorAll(".alert");
-                alerts.forEach(function (alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                });
-            }, 5000);
-
-            // Highlight current page in navigation
             document.addEventListener("DOMContentLoaded", function () {
-                // Force light theme by removing dark theme preference from localStorage
-                if (localStorage.getItem("theme") === "dark") {
-                    console.log(
-                        "Found 'dark' theme in localStorage, removing to enforce default light theme.",
-                    );
-                    localStorage.removeItem("theme");
+                const themeToggle = document.getElementById("theme-toggle");
+                const themeIcon = document.getElementById("theme-icon");
+
+                // Update icon based on current theme
+                function updateThemeIcon() {
+                    const currentTheme =
+                        document.documentElement.getAttribute("data-theme");
+                    if (currentTheme === "dark") {
+                        themeIcon.className = "bi bi-sun";
+                        themeToggle.title = "Switch to light theme";
+                    } else {
+                        themeIcon.className = "bi bi-moon";
+                        themeToggle.title = "Switch to dark theme";
+                    }
                 }
 
-                // Theme Debugging
-                const prefersDark = window.matchMedia(
-                    "(prefers-color-scheme: dark)",
-                ).matches;
-                console.log("Browser prefers dark color scheme:", prefersDark);
+                // Initialize icon
+                updateThemeIcon();
 
-                const bodyBgColor = getComputedStyle(
-                    document.body,
-                ).backgroundColor;
-                const bodyTextColor = getComputedStyle(document.body).color;
-                console.log("Computed body background color:", bodyBgColor);
-                console.log("Computed body text color:", bodyTextColor);
+                // Handle theme toggle
+                themeToggle.addEventListener("click", function () {
+                    theme.toggle();
+                    updateThemeIcon();
 
-                // Simple heuristic to guess theme based on body background color
-                // This assumes light theme background is closer to white and dark closer to black
-                const isLikelyDarkTheme =
-                    bodyBgColor === "rgb(26, 32, 44)" ||
-                    bodyBgColor === "#1a202c"; // Matches --background-color for dark
-                console.log(
-                    "Is currently likely dark theme based on body background?",
-                    isLikelyDarkTheme,
-                );
+                    // Add a small animation
+                    themeIcon.style.transform = "rotate(180deg)";
+                    setTimeout(() => {
+                        themeIcon.style.transform = "rotate(0deg)";
+                    }, 300);
+                });
 
+                // Listen for system theme changes
+                window
+                    .matchMedia("(prefers-color-scheme: dark)")
+                    .addEventListener("change", function (e) {
+                        const savedTheme = storage.get("theme");
+                        if (!savedTheme) {
+                            theme.set(e.matches ? "dark" : "light");
+                            updateThemeIcon();
+                        }
+                    });
+
+                // Auto-dismiss alerts after 5 seconds
+                setTimeout(function () {
+                    const alerts = document.querySelectorAll(".alert");
+                    alerts.forEach(function (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    });
+                }, 5000);
+
+                // Highlight current page in navigation
                 const currentPath = window.location.pathname;
                 const navLinks = document.querySelectorAll(".nav-link");
 
