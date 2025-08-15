@@ -23,6 +23,18 @@
       "last_name": "User",
       "created_at": "2025-08-14T22:02:59.065789",
       "updated_at": "2025-08-14T22:02:59.065799"
+    },
+    {
+      "username": "testuser2",
+      "email": "test2@example.com",
+      "hashed_password": "7e6e0c3079a08c5cc6036789b57e951f65f82383913ba1a49ae992544f1b4b6e",
+      "is_active": true,
+      "is_superuser": false,
+      "first_name": "Test",
+      "last_name": "User",
+      "role": "user",
+      "created_at": "2025-08-15T01:32:56.236783",
+      "updated_at": "2025-08-15T01:32:56.236788"
     }
   ],
   "created_at": "2025-08-14T19:06:06.171209",

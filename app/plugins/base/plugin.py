@@ -213,6 +213,7 @@ class BasePlugin(ABC):
             "api_prefix": self.manifest.get('api_prefix', f"/api/{self.category}/{self.name}"),
             "database_path": self.manifest.get('database_path', f"plugins.{self.category}.{self.name}"),
             "supports_hot_reload": self.manifest.get('supports_hot_reload', False),
+            "webui": self.get_webui_info(),
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat()
         }

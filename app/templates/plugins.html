@@ -429,7 +429,16 @@ page_actions %}
                         </div>
                     </div>
                     <div>
-                        <div class="fw-bold">${plugin.name}</div>
+                        <div class="fw-bold">
+                            ${
+                                plugin.webui &&
+                                plugin.webui.enabled &&
+                                plugin.webui.has_router &&
+                                plugin.enabled
+                                    ? `<a href="${plugin.webui.base_path}" class="text-decoration-none text-primary d-inline-flex align-items-center" style="transition: color 0.2s ease;" onmouseover="this.style.color='#0b5ed7'" onmouseout="this.style.color=''" title="Click to access ${plugin.name} WebUI">${plugin.name} <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.8em;"></i></a>`
+                                    : plugin.name
+                            }
+                        </div>
                         <small class="text-muted">${plugin.description || "No description available"}</small>
                     </div>
                 </div>

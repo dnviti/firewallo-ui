@@ -1,12 +1,13 @@
 """Authentication routes."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from fastapi import APIRouter, HTTPException, Depends, status
+from datetime import timedelta
+from fastapi import APIRouter, HTTPException, Depends, status, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
-from app.auth.models import User, hash_password, verify_password, create_access_token
+from app.auth.models import User, hash_password, verify_password, create_access_token, current_active_user_token
+from app.auth.sessions import get_session_manager
 from app.core.startup import CoreUserRepository
 
 
@@ -14,6 +15,9 @@ class UserCreate(BaseModel):
     email: str
     username: str
     password: str
+
+
+
 
 
 class UserResponse(BaseModel):
@@ -35,8 +39,8 @@ user_repo = CoreUserRepository()
 
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    """Login with username and password."""
+def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
+    """Login with username and password (OAuth2 compatible)."""
     # Try to find user by username or email
     user = user_repo.get_user_by_username(form_data.username)
     if not user:
@@ -55,11 +59,50 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
             detail="User account is disabled",
         )
 
+    # Create session and tokens
+    session_manager = get_session_manager()
+
+    # Get client info
+    client_ip = getattr(request.client, 'host', None) if request.client else None
+    user_agent = request.headers.get('User-Agent')
+
+    # Create persistent session
+    username = user.get("username", "")
+    if not username:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Username not found in user data"
+        )
+
+    session_id = session_manager.create_session(
+        username=username,
+        user_data=user,
+        remember_me=False,  # Default to False for OAuth2 flow
+        ip_address=client_ip,
+        user_agent=user_agent
+    )
+
+    # Create JWT token
     access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(
         data={"sub": user.get("username")}, expires_delta=access_token_expires
     )
+
+    # Set session cookie
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        secure=False,  # Set to True in production with HTTPS
+        samesite="lax",
+        max_age=int(timedelta(days=7).total_seconds())  # 7 days
+    )
+
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+
+
 
 
 @router.post("/register", response_model=UserResponse)
@@ -102,14 +145,19 @@ def register(user_data: UserCreate):
 
 
 @router.get("/me", response_model=UserResponse)
-def get_current_user_info(current_user: User = Depends()):
+async def get_current_user_info(request: Request):
     """Get current user information."""
+    # Get user via session or token
+    from app.auth.models import get_current_user
+    user_data = await get_current_user(request)
+    user = User(user_data)
+
     # Convert User model to UserResponse
     return UserResponse(
-        email=current_user.email,
-        username=current_user.username,
-        is_active=current_user.is_active,
-        is_superuser=current_user.is_superuser,
+        email=user.email,
+        username=user.username,
+        is_active=user.is_active,
+        is_superuser=user.is_superuser,
     )
 
 
@@ -136,14 +184,31 @@ def list_users():
         raise HTTPException(status_code=500, detail=f"Failed to list users: {str(e)}")
 
 
+@router.post("/logout")
+def logout(request: Request, response: Response):
+    """Logout and destroy session."""
+    session_manager = get_session_manager()
+
+    # Get session ID from cookie
+    session_id = request.cookies.get("session_id")
+    if session_id:
+        session_manager.destroy_session(session_id)
+
+    # Clear cookies
+    response.delete_cookie("session_id")
+    response.delete_cookie("access_token")
+
+    return {"message": "Logged out successfully"}
+
+
 # Legacy compatibility endpoints for existing frontend
 @router.post("/jwt/login", response_model=Token)
-def jwt_login(form_data: OAuth2PasswordRequestForm = Depends()):
+def jwt_login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     """Legacy JWT login endpoint for compatibility."""
-    return login(form_data)
+    return login(request, response, form_data)
 
 
 @router.post("/token", response_model=Token)
-def create_token(form_data: OAuth2PasswordRequestForm = Depends()):
+def create_token(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     """Alternative token endpoint for compatibility."""
-    return login(form_data)
+    return login(request, response, form_data)

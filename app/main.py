@@ -82,12 +82,6 @@ api_router.include_router(auth.router, prefix="/auth")
 api_router.include_router(plugins.router, prefix="/plugins", tags=["plugins"])
 api_router.include_router(system.router, prefix="/system", tags=["system"])
 
-# Include GUI routes only if WebUI plugin is not loaded
-# (WebUI plugin will handle these routes if it's active)
-# TEMPORARILY DISABLED TO FORCE WEBUI PLUGIN AUTHENTICATION
-# if not webui_plugin_loaded:
-#     app.include_router(gui.router)
-
 # Function to configure WebUI plugin if loaded
 async def configure_webui_plugin():
     """Configure WebUI plugin if it's loaded."""
@@ -134,7 +128,7 @@ async def configure_webui_plugin():
         logger.error(f"Failed to configure WebUI plugin: {e}")
 
 # Function to register plugin routes dynamically
-def register_plugin_routes():
+async def register_plugin_routes():
     """Register routes from all enabled plugins."""
     try:
         enabled_plugins = plugin_manager.get_enabled_plugins()
@@ -164,7 +158,9 @@ def register_plugin_routes():
                 if hasattr(plugin, 'webui_enabled') and plugin.webui_enabled:
                     # Initialize plugin WebUI
                     if asyncio.iscoroutinefunction(plugin.initialize_webui):
-                        asyncio.create_task(plugin.initialize_webui())
+                        await plugin.initialize_webui()
+                    else:
+                        plugin.initialize_webui()
 
                     # Get WebUI routes
                     webui_routes = plugin.get_webui_routes()
@@ -197,8 +193,13 @@ def register_plugin_routes():
         logger.error(f"Failed to register plugin routes: {e}")
         return 0
 
-# Include only API router
+# Include API router first (higher priority)
 app.include_router(api_router)
+
+# Include GUI routes with session-based authentication (lower priority)
+# Note: Plugin routes will be registered during startup to take precedence
+if not webui_plugin_loaded:
+    app.include_router(gui.router)
 
 # Test endpoint to verify our changes are loaded
 @app.get("/test-plugin-webui")
@@ -529,7 +530,7 @@ async def register_routes():
         else:
             logger.warning("WebUI plugin not loaded - web interface may not have authentication!")
 
-        registered_count = register_plugin_routes()
+        registered_count = await register_plugin_routes()
         if registered_count > 0:
             logger.info(f"Plugin route registration completed: {registered_count} plugins")
         else:

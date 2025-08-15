@@ -71,21 +71,9 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
         self.router = APIRouter(prefix="/wireguard", tags=["wireguard"])
         self._setup_routes()
 
-        # Initialize WebUI if configured
-        if self.webui_enabled:
-            self._initialize_webui()
-            self.logger.info(f"WebUI initialization completed for {self.name}")
+        # WebUI will be initialized by the base class when needed
 
-    def _initialize_webui(self):
-        """Initialize WebUI components."""
-        try:
-            from .webui.routes import WireGuardWebUI
-            self.webui_handler = WireGuardWebUI(self)
-            self.webui_router = self.webui_handler.router
-            self.logger.info("WireGuard WebUI initialized")
-        except ImportError as e:
-            self.logger.warning(f"Could not initialize WebUI: {e}")
-            self.webui_router = None
+
 
     async def initialize(self) -> bool:
         """Initialize the WireGuard plugin."""

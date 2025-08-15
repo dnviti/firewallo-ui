@@ -238,6 +238,9 @@ def run_startup_tasks() -> None:
         # 3. Create default admin user
         create_default_admin()
 
+        # 4. Cleanup expired sessions
+        cleanup_expired_sessions()
+
         logger.info("Startup tasks completed successfully")
 
     except Exception as exc:
@@ -246,6 +249,16 @@ def run_startup_tasks() -> None:
 
 
 # Compatibility function for existing code
+def cleanup_expired_sessions() -> None:
+    """Cleanup expired sessions on startup."""
+    try:
+        from app.auth.sessions import cleanup_sessions_on_startup
+        cleanup_sessions_on_startup()
+        logger.info("Session cleanup completed")
+    except Exception as exc:
+        logger.error(f"Session cleanup failed: {exc}")
+
+
 def create_default_admin_user():
     """Alias for create_default_admin for backward compatibility."""
     create_default_admin()
