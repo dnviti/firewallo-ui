@@ -1163,6 +1163,416 @@ html, body {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* ULTRA-SPECIFIC SIDEBAR OVERRIDES FOR ALL PLUGINS */
+/* These rules have maximum specificity to override any plugin-specific styles */
+
+/* Sidebar container - all possible selectors */
+.sidebar,
+nav.sidebar,
+.col-md-3.sidebar,
+.col-lg-2.sidebar,
+nav.col-md-3,
+nav.col-lg-2,
+.d-md-block.sidebar,
+nav.d-md-block.sidebar,
+.col-md-3.col-lg-2.d-md-block.sidebar {
+    background-color: var(--sidebar-bg) !important;
+    border-right: 1px solid var(--sidebar-border) !important;
+    color: var(--text-primary) !important;
+    min-height: calc(100vh - 56px) !important;
+}
+
+/* Sidebar inner content */
+.sidebar .position-sticky,
+.sidebar > div,
+nav.sidebar .position-sticky,
+nav.sidebar > div {
+    background-color: var(--sidebar-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Sidebar navigation lists */
+.sidebar ul.nav,
+.sidebar .nav.flex-column,
+nav.sidebar ul.nav,
+nav.sidebar .nav.flex-column,
+.sidebar .nav-pills,
+.sidebar .nav-tabs {
+    background-color: transparent !important;
+}
+
+/* Sidebar navigation items */
+.sidebar li.nav-item,
+.sidebar .nav-item,
+nav.sidebar li.nav-item,
+nav.sidebar .nav-item {
+    background-color: transparent !important;
+}
+
+/* Sidebar navigation links - maximum specificity */
+.sidebar .nav-link,
+.sidebar a.nav-link,
+.sidebar .nav-item .nav-link,
+.sidebar .nav-item a.nav-link,
+nav.sidebar .nav-link,
+nav.sidebar a.nav-link,
+nav.sidebar .nav-item .nav-link,
+nav.sidebar .nav-item a.nav-link,
+.sidebar ul.nav .nav-link,
+.sidebar ul.nav a.nav-link,
+.sidebar .nav.flex-column .nav-link,
+.sidebar .nav.flex-column a.nav-link {
+    background-color: transparent !important;
+    color: var(--sidebar-link-color) !important;
+    border: none !important;
+    border-radius: var(--border-radius) !important;
+    margin: 2px 8px !important;
+    padding: 0.5rem 0.75rem !important;
+    transition: var(--transition) !important;
+    text-decoration: none !important;
+}
+
+/* Sidebar link hover states */
+.sidebar .nav-link:hover,
+.sidebar a.nav-link:hover,
+.sidebar .nav-item .nav-link:hover,
+.sidebar .nav-item a.nav-link:hover,
+nav.sidebar .nav-link:hover,
+nav.sidebar a.nav-link:hover,
+nav.sidebar .nav-item .nav-link:hover,
+nav.sidebar .nav-item a.nav-link:hover,
+.sidebar ul.nav .nav-link:hover,
+.sidebar ul.nav a.nav-link:hover,
+.sidebar .nav.flex-column .nav-link:hover,
+.sidebar .nav.flex-column a.nav-link:hover {
+    background-color: var(--sidebar-link-hover-bg) !important;
+    color: var(--primary-color) !important;
+    transform: none !important;
+}
+
+/* Sidebar link active states */
+.sidebar .nav-link.active,
+.sidebar a.nav-link.active,
+.sidebar .nav-item .nav-link.active,
+.sidebar .nav-item a.nav-link.active,
+nav.sidebar .nav-link.active,
+nav.sidebar a.nav-link.active,
+nav.sidebar .nav-item .nav-link.active,
+nav.sidebar .nav-item a.nav-link.active,
+.sidebar ul.nav .nav-link.active,
+.sidebar ul.nav a.nav-link.active,
+.sidebar .nav.flex-column .nav-link.active,
+.sidebar .nav.flex-column a.nav-link.active {
+    background-color: var(--sidebar-link-active-bg) !important;
+    color: var(--sidebar-link-active-color) !important;
+}
+
+/* Sidebar headings and section titles */
+.sidebar .sidebar-heading,
+.sidebar h6,
+.sidebar .h6,
+nav.sidebar .sidebar-heading,
+nav.sidebar h6,
+nav.sidebar .h6,
+.sidebar .text-muted,
+nav.sidebar .text-muted {
+    color: var(--text-muted) !important;
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Sidebar icons */
+.sidebar i,
+.sidebar .bi,
+nav.sidebar i,
+nav.sidebar .bi {
+    color: inherit !important;
+    width: 20px !important;
+    text-align: center !important;
+}
+
+/* Sidebar badges and counters */
+.sidebar .badge,
+nav.sidebar .badge {
+    background-color: var(--primary-color) !important;
+    color: var(--btn-text) !important;
+}
+
+/* Plugin-specific sidebar overrides */
+.sidebar[id*="plugin"],
+.sidebar[class*="plugin"],
+nav.sidebar[id*="plugin"],
+nav.sidebar[class*="plugin"] {
+    background-color: var(--sidebar-bg) !important;
+    border-right-color: var(--sidebar-border) !important;
+}
+
+/* WireGuard specific sidebar fixes */
+.sidebar .nav-link[href*="wireguard"],
+.sidebar a[href*="wireguard"],
+nav.sidebar .nav-link[href*="wireguard"],
+nav.sidebar a[href*="wireguard"] {
+    background-color: transparent !important;
+    color: var(--sidebar-link-color) !important;
+}
+
+.sidebar .nav-link[href*="wireguard"]:hover,
+.sidebar a[href*="wireguard"]:hover,
+nav.sidebar .nav-link[href*="wireguard"]:hover,
+nav.sidebar a[href*="wireguard"]:hover {
+    background-color: var(--sidebar-link-hover-bg) !important;
+    color: var(--primary-color) !important;
+}
+
+/* Force remove any inline styles from sidebar elements */
+.sidebar [style*="background"],
+.sidebar [style*="color"],
+nav.sidebar [style*="background"],
+nav.sidebar [style*="color"] {
+    background-color: var(--sidebar-bg) !important;
+    color: var(--sidebar-link-color) !important;
+}
+
+/* Global Plugin WebUI Theme Consistency */
+/* These rules ensure all plugin WebUIs use the unified theme system */
+
+/* Override system dark mode preference when manual theme is set */
+@media (prefers-color-scheme: dark) {
+    [data-theme="light"] {
+        --primary-color: #667eea !important;
+        --secondary-color: #764ba2 !important;
+        --success-color: #28a745 !important;
+        --danger-color: #dc3545 !important;
+        --warning-color: #ffc107 !important;
+        --info-color: #17a2b8 !important;
+        --background-color: #ffffff !important;
+        --body-bg: #f8f9fa !important;
+        --surface-color: #ffffff !important;
+        --surface-secondary: #f8f9fa !important;
+        --text-primary: #212529 !important;
+        --text-secondary: #6c757d !important;
+        --text-muted: #6c757d !important;
+        --text-inverse: #ffffff !important;
+        --border-color: #dee2e6 !important;
+        --navbar-bg: #667eea !important;
+        --navbar-text: #ffffff !important;
+        --sidebar-bg: #f8f9fa !important;
+        --sidebar-border: #dee2e6 !important;
+        --sidebar-link-color: #495057 !important;
+        --sidebar-link-hover-bg: #e9ecef !important;
+        --sidebar-link-active-bg: #667eea !important;
+        --sidebar-link-active-color: #ffffff !important;
+        --card-bg: #ffffff !important;
+        --card-border: rgba(0, 0, 0, 0.125) !important;
+        --card-header-bg: rgba(0, 0, 0, 0.03) !important;
+        --input-bg: #ffffff !important;
+        --input-border: #ced4da !important;
+        --input-text: #495057 !important;
+        --table-bg: #ffffff !important;
+        --table-border: #dee2e6 !important;
+        --table-header-bg: #f8f9fa !important;
+        --table-header-text: #495057 !important;
+        --table-row-hover: rgba(0, 0, 0, 0.05) !important;
+        --table-striped: rgba(0, 0, 0, 0.025) !important;
+        --modal-bg: #ffffff !important;
+        --dropdown-bg: #ffffff !important;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    [data-theme="dark"] {
+        --primary-color: #764ba2 !important;
+        --secondary-color: #667eea !important;
+        --success-color: #10b981 !important;
+        --danger-color: #ef4444 !important;
+        --warning-color: #f59e0b !important;
+        --info-color: #3b82f6 !important;
+        --background-color: #1a202c !important;
+        --body-bg: #1a202c !important;
+        --surface-color: #2d3748 !important;
+        --surface-secondary: #374151 !important;
+        --text-primary: #e2e8f0 !important;
+        --text-secondary: #a0aec0 !important;
+        --text-muted: #718096 !important;
+        --text-inverse: #1a202c !important;
+        --border-color: #4a5568 !important;
+        --navbar-bg: #2d3748 !important;
+        --navbar-text: #e2e8f0 !important;
+        --sidebar-bg: #2d3748 !important;
+        --sidebar-border: #4a5568 !important;
+        --sidebar-link-color: #a0aec0 !important;
+        --sidebar-link-hover-bg: #374151 !important;
+        --sidebar-link-active-bg: #764ba2 !important;
+        --sidebar-link-active-color: #ffffff !important;
+        --card-bg: #2d3748 !important;
+        --card-border: #4a5568 !important;
+        --card-header-bg: #374151 !important;
+        --input-bg: #374151 !important;
+        --input-border: #4a5568 !important;
+        --input-text: #e2e8f0 !important;
+        --table-bg: #2d3748 !important;
+        --table-border: #4a5568 !important;
+        --table-header-bg: #1a202c !important;
+        --table-header-text: #e2e8f0 !important;
+        --table-row-hover: rgba(255, 255, 255, 0.1) !important;
+        --table-striped: rgba(255, 255, 255, 0.05) !important;
+        --modal-bg: #2d3748 !important;
+        --dropdown-bg: #2d3748 !important;
+    }
+}
+
+/* Force theme variables on all elements - highest specificity */
+* {
+    color: var(--text-primary) !important;
+}
+
+/* Override any hardcoded sidebar styles from plugins */
+.sidebar,
+nav.sidebar,
+.sidebar .nav,
+.sidebar .nav-link {
+    background-color: var(--sidebar-bg) !important;
+    border-color: var(--sidebar-border) !important;
+    color: var(--sidebar-link-color) !important;
+}
+
+.sidebar .nav-link:hover {
+    background-color: var(--sidebar-link-hover-bg) !important;
+    color: var(--primary-color) !important;
+}
+
+.sidebar .nav-link.active {
+    background-color: var(--sidebar-link-active-bg) !important;
+    color: var(--sidebar-link-active-color) !important;
+}
+
+.sidebar .sidebar-heading,
+.sidebar h6 {
+    color: var(--text-muted) !important;
+}
+
+/* Global navbar overrides for plugins */
+.navbar,
+nav.navbar {
+    background-color: var(--navbar-bg) !important;
+}
+
+.navbar .navbar-brand,
+.navbar .nav-link {
+    color: var(--navbar-text) !important;
+}
+
+/* Global card overrides */
+.card,
+.card-body,
+.card-header,
+.card-footer {
+    background-color: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
+    color: var(--text-primary) !important;
+}
+
+.card-header {
+    background-color: var(--card-header-bg) !important;
+}
+
+/* Global form overrides */
+.form-control,
+.form-select,
+input,
+select,
+textarea {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--input-text) !important;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border-focus) !important;
+    color: var(--input-text) !important;
+}
+
+.form-label,
+label {
+    color: var(--text-primary) !important;
+}
+
+/* Global list group overrides */
+.list-group-item {
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.list-group-item:hover {
+    background-color: var(--surface-secondary) !important;
+}
+
+.list-group-item.active {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--btn-text) !important;
+}
+
+/* Global well/panel overrides for older components */
+.well,
+.panel,
+.panel-default,
+.panel-body,
+.panel-heading {
+    background-color: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Code blocks and pre elements */
+code,
+pre {
+    background-color: var(--surface-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+/* Breadcrumbs */
+.breadcrumb {
+    background-color: var(--surface-secondary) !important;
+}
+
+.breadcrumb-item {
+    color: var(--text-secondary) !important;
+}
+
+.breadcrumb-item.active {
+    color: var(--text-primary) !important;
+}
+
+/* Pagination */
+.pagination .page-item .page-link {
+    background-color: var(--surface-color) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    color: var(--btn-text) !important;
+}
+
+.pagination .page-item:hover .page-link {
+    background-color: var(--surface-secondary) !important;
+    color: var(--primary-color) !important;
+}
+
 /* Print styles */
 @media print {
     .sidebar,

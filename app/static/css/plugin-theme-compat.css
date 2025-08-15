@@ -1,0 +1,320 @@
+/* Plugin Theme Compatibility CSS
+ * This file ensures all plugin WebUIs are consistent with the main theme system
+ * Include this file in any plugin WebUI that doesn't properly inherit themes
+ */
+
+/* Force theme initialization if not set */
+html:not([data-theme]) {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --background-color: #ffffff;
+    --body-bg: #f8f9fa;
+    --surface-color: #ffffff;
+    --surface-secondary: #f8f9fa;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #6c757d;
+    --text-inverse: #ffffff;
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-dark: #adb5bd;
+    --navbar-bg: var(--primary-color);
+    --navbar-text: #ffffff;
+    --sidebar-bg: #f8f9fa;
+    --sidebar-border: #dee2e6;
+    --sidebar-link-color: #495057;
+    --sidebar-link-hover-bg: #e9ecef;
+    --sidebar-link-active-bg: var(--primary-color);
+    --sidebar-link-active-color: #ffffff;
+    --card-bg: #ffffff;
+    --card-border: rgba(0, 0, 0, 0.125);
+    --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --card-shadow-hover: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
+    --card-header-bg: rgba(0, 0, 0, 0.03);
+    --input-bg: #ffffff;
+    --input-border: #ced4da;
+    --input-border-focus: var(--primary-color);
+    --input-text: #495057;
+    --input-placeholder: #6c757d;
+    --table-bg: #ffffff;
+    --table-border: #dee2e6;
+    --table-header-bg: #f8f9fa;
+    --table-header-text: #495057;
+    --table-row-hover: rgba(0, 0, 0, 0.05);
+    --table-striped: rgba(0, 0, 0, 0.025);
+    --btn-text: #ffffff;
+    --btn-border-radius: 0.375rem;
+    --modal-bg: #ffffff;
+    --modal-border: var(--border-color);
+    --modal-header-bg: #ffffff;
+    --modal-backdrop: rgba(0, 0, 0, 0.5);
+    --dropdown-bg: #ffffff;
+    --dropdown-border: var(--border-color);
+    --dropdown-link-color: #212529;
+    --dropdown-link-hover-bg: #f8f9fa;
+    --dropdown-divider: #e9ecef;
+}
+
+/* Force apply dark theme if set */
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme]) {
+        --primary-color: #764ba2;
+        --secondary-color: #667eea;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --info-color: #3b82f6;
+        --background-color: #1a202c;
+        --body-bg: #1a202c;
+        --surface-color: #2d3748;
+        --surface-secondary: #374151;
+        --text-primary: #e2e8f0;
+        --text-secondary: #a0aec0;
+        --text-muted: #718096;
+        --text-inverse: #1a202c;
+        --border-color: #4a5568;
+        --border-light: #374151;
+        --border-dark: #2d3748;
+        --navbar-bg: #2d3748;
+        --navbar-text: #e2e8f0;
+        --sidebar-bg: #2d3748;
+        --sidebar-border: #4a5568;
+        --sidebar-link-color: #a0aec0;
+        --sidebar-link-hover-bg: #374151;
+        --sidebar-link-active-bg: var(--primary-color);
+        --sidebar-link-active-color: #ffffff;
+        --card-bg: #2d3748;
+        --card-border: #4a5568;
+        --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+        --card-shadow-hover: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.4);
+        --card-header-bg: #374151;
+        --input-bg: #374151;
+        --input-border: #4a5568;
+        --input-border-focus: var(--primary-color);
+        --input-text: #e2e8f0;
+        --input-placeholder: #a0aec0;
+        --table-bg: #2d3748;
+        --table-border: #4a5568;
+        --table-header-bg: #1a202c;
+        --table-header-text: #e2e8f0;
+        --table-row-hover: rgba(255, 255, 255, 0.1);
+        --table-striped: rgba(255, 255, 255, 0.05);
+        --btn-text: #ffffff;
+        --btn-border-radius: 0.375rem;
+        --modal-bg: #2d3748;
+        --modal-border: #4a5568;
+        --modal-header-bg: #374151;
+        --modal-backdrop: rgba(0, 0, 0, 0.7);
+        --dropdown-bg: #2d3748;
+        --dropdown-border: #4a5568;
+        --dropdown-link-color: #e2e8f0;
+        --dropdown-link-hover-bg: #374151;
+        --dropdown-divider: #4a5568;
+    }
+}
+
+/* CRITICAL: Override any hardcoded plugin styles */
+
+/* Body and layout - maximum specificity */
+html body {
+    background-color: var(--body-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Sidebar - force theme compliance */
+.sidebar,
+nav.sidebar,
+.col-md-3.sidebar,
+.col-lg-2.sidebar,
+nav.col-md-3,
+nav.col-lg-2 {
+    background-color: var(--sidebar-bg) !important;
+    border-right-color: var(--sidebar-border) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Sidebar navigation links - force compliance */
+.sidebar .nav-link,
+.sidebar a.nav-link,
+nav.sidebar .nav-link,
+nav.sidebar a.nav-link {
+    background-color: transparent !important;
+    color: var(--sidebar-link-color) !important;
+    border: none !important;
+}
+
+.sidebar .nav-link:hover,
+.sidebar a.nav-link:hover,
+nav.sidebar .nav-link:hover,
+nav.sidebar a.nav-link:hover {
+    background-color: var(--sidebar-link-hover-bg) !important;
+    color: var(--primary-color) !important;
+}
+
+.sidebar .nav-link.active,
+.sidebar a.nav-link.active,
+nav.sidebar .nav-link.active,
+nav.sidebar a.nav-link.active {
+    background-color: var(--sidebar-link-active-bg) !important;
+    color: var(--sidebar-link-active-color) !important;
+}
+
+/* Sidebar headings and text */
+.sidebar h6,
+.sidebar .sidebar-heading,
+.sidebar .text-muted,
+nav.sidebar h6,
+nav.sidebar .sidebar-heading,
+nav.sidebar .text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Main content area */
+.main-content,
+main.main-content,
+.col-md-9.main-content,
+.col-lg-10.main-content {
+    background-color: var(--body-bg) !important;
+    color: var(--text-primary) !important;
+}
+
+/* All headings */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    color: var(--text-primary) !important;
+}
+
+/* All paragraphs and text */
+p, span:not(.badge):not(.btn):not(.navbar-toggler-icon),
+div:not(.progress-bar):not(.btn):not(.badge) {
+    color: var(--text-primary) !important;
+}
+
+/* Override any hardcoded background colors */
+.bg-light {
+    background-color: var(--surface-color) !important;
+}
+
+.bg-white {
+    background-color: var(--surface-color) !important;
+}
+
+.bg-dark {
+    background-color: var(--surface-color) !important;
+}
+
+.bg-secondary {
+    background-color: var(--surface-secondary) !important;
+}
+
+/* Text color utilities with theme support */
+.text-dark {
+    color: var(--text-primary) !important;
+}
+
+.text-light {
+    color: var(--text-secondary) !important;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.text-white {
+    color: var(--text-inverse) !important;
+}
+
+/* Border utilities */
+.border {
+    border-color: var(--border-color) !important;
+}
+
+.border-light {
+    border-color: var(--border-light) !important;
+}
+
+.border-dark {
+    border-color: var(--border-dark) !important;
+}
+
+.border-top,
+.border-bottom,
+.border-left,
+.border-right {
+    border-color: var(--border-color) !important;
+}
+
+/* Plugin-specific component overrides */
+.plugin-card,
+.server-card,
+.client-card,
+.config-card {
+    background-color: var(--card-bg) !important;
+    border-color: var(--card-border) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Status indicators in plugins */
+.status-online,
+.status-active,
+.status-running {
+    background-color: var(--success-color) !important;
+}
+
+.status-offline,
+.status-inactive,
+.status-stopped {
+    background-color: var(--danger-color) !important;
+}
+
+.status-warning,
+.status-degraded {
+    background-color: var(--warning-color) !important;
+}
+
+/* Plugin navigation consistency */
+.nav-pills .nav-link {
+    color: var(--text-secondary) !important;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--primary-color) !important;
+    color: var(--btn-text) !important;
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-secondary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: var(--surface-color) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+    border-bottom-color: var(--surface-color) !important;
+}
+
+/* Ensure all icons inherit proper colors */
+i[class*="bi-"],
+.bi {
+    color: inherit !important;
+}
+
+/* Container and layout elements */
+.container,
+.container-fluid {
+    color: var(--text-primary) !important;
+}
+
+/* Emergency override for stubborn elements */
+[style*="background-color"] {
+    background-color: var(--surface-color) !important;
+}
+
+[style*="color"] {
+    color: var(--text-primary) !important;
+}
