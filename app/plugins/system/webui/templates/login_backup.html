@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Login - Firewallo UI</title>
+
+        <!-- Bootstrap 5 CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Bootstrap Icons -->
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+        />
+
+        <style>
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            .login-container {
+                max-width: 400px;
+                width: 100%;
+                padding: 0 20px;
+            }
+
+            .login-card {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                padding: 2rem;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .login-header {
+                text-align: center;
+                margin-bottom: 2rem;
+            }
+
+            .login-logo {
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 1rem;
+                font-size: 2rem;
+                color: white;
+            }
+
+            .login-title {
+                color: #333;
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+            }
+
+            .login-subtitle {
+                color: #666;
+                font-size: 0.9rem;
+            }
+
+            .form-floating {
+                margin-bottom: 1rem;
+            }
+
+            .form-control {
+                border-radius: 10px;
+                border: 2px solid #e1e5e9;
+                padding: 1rem 1rem;
+                height: auto;
+                font-size: 1rem;
+                transition: all 0.3s ease;
+            }
+
+            .form-control:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            }
+
+            .form-floating > label {
+                padding: 1rem 1rem;
+                color: #666;
+            }
+
+            .btn-login {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border: none;
+                border-radius: 10px;
+                padding: 1rem;
+                font-weight: 600;
+                font-size: 1rem;
+                width: 100%;
+                color: white;
+                transition: all 0.3s ease;
+                margin-top: 1rem;
+            }
+
+            .btn-login:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+                color: white;
+            }
+
+            .btn-login:disabled {
+                transform: none;
+                box-shadow: none;
+                opacity: 0.7;
+            }
+
+            .form-check {
+                margin: 1rem 0;
+            }
+
+            .form-check-input:checked {
+                background-color: #667eea;
+                border-color: #667eea;
+            }
+
+            .form-check-input:focus {
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            }
+
+            .alert {
+                border-radius: 10px;
+                border: none;
+                margin-bottom: 1rem;
+            }
+
+            .forgot-password {
+                text-align: center;
+                margin-top: 1.5rem;
+            }
+
+            .forgot-password a {
+                color: #667eea;
+                text-decoration: none;
+                font-size: 0.9rem;
+            }
+
+            .forgot-password a:hover {
+                text-decoration: underline;
+            }
+
+            .loading-spinner {
+                display: none;
+            }
+
+            @media (max-width: 576px) {
+                .login-card {
+                    padding: 1.5rem;
+                    margin: 1rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <div class="login-logo">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h2 class="login-title">Welcome Back</h2>
+                    <p class="login-subtitle">
+                        Please sign in to your Firewallo account
+                    </p>
+
+                    <!-- Default Credentials Info -->
+                    <div
+                        class="alert alert-info alert-dismissible fade show"
+                        role="alert"
+                    >
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Default Credentials:</strong><br />
+                        Email: <code>admin@firewallo.io</code><br />
+                        Password: <code>admin</code>
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Close"
+                        ></button>
+                    </div>
+                </div>
+
+                <!-- Error/Success Messages -->
+                <div id="message-container"></div>
+
+                <form id="login-form" novalidate>
+                    <div class="form-floating">
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="username"
+                            placeholder="Username"
+                            required
+                        />
+                        <label for="username">
+                            <i class="bi bi-person me-2"></i>Username
+                        </label>
+                        <div class="invalid-feedback">
+                            Please enter your username.
+                        </div>
+                    </div>
+
+                    <div class="form-floating">
+                        <input
+                            type="password"
+                            class="form-control"
+                            id="password"
+                            placeholder="Password"
+                            required
+                            minlength="4"
+                        />
+                        <label for="password">
+                            <i class="bi bi-lock me-2"></i>Password
+                        </label>
+                        <div class="invalid-feedback">
+                            Password must be at least 4 characters long.
+                        </div>
+                    </div>
+
+                    <div class="form-check">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            value=""
+                            id="remember-me"
+                            checked
+                        />
+                        <label class="form-check-label" for="remember-me">
+                            Remember me for 30 days
+                        </label>
+                    </div>
+
+                    <button class="btn btn-login" type="submit">
+                        <span class="login-text">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Sign In
+                        </span>
+                        <span class="loading-spinner">
+                            <span
+                                class="spinner-border spinner-border-sm me-2"
+                                role="status"
+                                aria-hidden="true"
+                            ></span>
+                            Signing in...
+                        </span>
+                    </button>
+
+                    <div class="forgot-password">
+                        <a href="#" id="forgot-password-link"
+                            >Forgot your password?</a
+                        >
+                    </div>
+                </form>
+            </div>
+
+            <!-- System Status Footer -->
+            <div class="text-center mt-3">
+                <small class="text-white-50">
+                    <i class="bi bi-shield-check me-1"></i>
+                    Firewallo System Status:
+                    <span class="text-success">Online</span>
+                </small>
+            </div>
+        </div>
+
+        <!-- Bootstrap 5 JS Bundle -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const loginForm = document.getElementById("login-form");
+                const usernameInput = document.getElementById("username");
+                const passwordInput = document.getElementById("password");
+                const submitButton = loginForm.querySelector(".btn-login");
+                const loginText = submitButton.querySelector(".login-text");
+                const loadingSpinner =
+                    submitButton.querySelector(".loading-spinner");
+
+
+
+                // Main login handler
+                async function performLogin() {
+                    console.log("performLogin called");
+
+                    // Get form values
+                    const username = usernameInput.value.trim();
+                    const password = passwordInput.value;
+                    const rememberMe = document.getElementById("remember-me").checked;
+
+                    // Simple validation
+                    if (!username) {
+                        showMessage("Please enter your username", "danger");
+                        usernameInput.focus();
+                        return;
+                    }
+
+                    if (username.length < 3) {
+                        showMessage("Username must be at least 3 characters", "danger");
+                        usernameInput.focus();
+                        return;
+                    }
+
+                    if (!password) {
+                        showMessage("Please enter your password", "danger");
+                        passwordInput.focus();
+                        return;
+                    }
+
+                    if (password.length < 3) {
+                        showMessage("Password must be at least 3 characters", "danger");
+                        passwordInput.focus();
+                        return;
+                    }
+
+                    console.log("Login attempt:", { username, passwordLength: password.length, rememberMe });
+
+                    // Show loading state
+                    setLoadingState(true);
+
+                    try {
+                        // Create OAuth2 form data
+                        const formData = new FormData();
+                        formData.append("username", username);
+                        formData.append("password", password);
+                        formData.append("grant_type", "password");
+
+                        console.log("Sending login request...");
+
+                        const response = await fetch("/api/auth/login", {
+                            method: "POST",
+                            body: formData,
+                            credentials: "include",
+                        });
+
+                        console.log("Response status:", response.status);
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            console.log("Login successful:", result);
+
+                            showMessage("Login successful! Redirecting...", "success");
+
+                            // Wait a moment then redirect
+                            setTimeout(() => {
+                                window.location.href = "/dashboard";
+                            }, 1000);
+
+                        } else {
+                            // Handle login failure
+                            let errorMessage = "Login failed. Please check your credentials.";
+
+                            try {
+                                const errorData = await response.json();
+                                if (errorData.detail) {
+                                    errorMessage = errorData.detail;
+                                }
+                            } catch (e) {
+                                console.log("Could not parse error response");
+                            }
+
+                            console.log("Login failed:", errorMessage);
+                            showMessage(errorMessage, "danger");
+                        }
+
+                    } catch (error) {
+                        console.error("Login error:", error);
+                        showMessage("Network error. Please try again.", "danger");
+                    } finally {
+                        setLoadingState(false);
+                    }
+                }
+
+                // Real-time validation
+                usernameInput.addEventListener("input", function () {
+                    validateUsername();
+                });
+
+                passwordInput.addEventListener("input", function () {
+                    validatePassword();
+                });
+
+                // Forgot password functionality
+                document
+                    .getElementById("forgot-password-link")
+                    .addEventListener("click", function (e) {
+                        e.preventDefault();
+                        showMessage(
+                            "Password reset functionality would be implemented here.",
+                            "info",
+                        );
+                    });
+
+                // Focus username field
+                usernameInput.focus();
+
+                console.log("Login form initialized");
+            });
+
+                function setLoadingState(loading) {
+                    submitButton.disabled = loading;
+                    loginText.style.display = loading ? "none" : "inline";
+                    loadingSpinner.style.display = loading ? "inline" : "none";
+                }
+
+                function showMessage(message, type) {
+                    const messageContainer =
+                        document.getElementById("message-container");
+                    const alertDiv = document.createElement("div");
+                    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                    alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+
+                    // Clear previous messages
+                    messageContainer.innerHTML = "";
+                    messageContainer.appendChild(alertDiv);
+
+                    // Auto-dismiss success messages
+                    if (type === "success") {
+                        setTimeout(() => {
+                            if (alertDiv.parentNode) {
+                                bootstrap.Alert.getInstance(alertDiv)?.close();
+                            }
+                        }, 3000);
+                    }
+                }
+
+                // Form submit handler
+                loginForm.addEventListener("submit", function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("Form submitted");
+                    performLogin();
+                });
+
+                // Enter key handlers
+                usernameInput.addEventListener("keypress", function(e) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        performLogin();
+                    }
+                });
+
+                passwordInput.addEventListener("keypress", function(e) {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        performLogin();
+                    }
+                });
+
+                // Auto-focus username field
+                usernameInput.focus();
+            });
+        </script>
+    </body>
+</html>
