@@ -888,6 +888,7 @@ class MenuService:
 
     # Class-level storage for menu entries
     _menu_entries: Dict[str, Dict[str, Any]] = {}
+    _menu_categories: Dict[str, List[str]] = {}  # category -> list of menu_ids
     _menu_order: List[str] = []
     _menu_lock = asyncio.Lock()
     _repository = None
@@ -908,8 +909,9 @@ class MenuService:
                 saved_menu = await cls._repository.get_data("menu_configuration")
                 if saved_menu:
                     cls._menu_entries = saved_menu.get("entries", {})
+                    cls._menu_categories = saved_menu.get("categories", {})
                     cls._menu_order = saved_menu.get("order", [])
-                    logging.info(f"Loaded {len(cls._menu_entries)} existing menu entries")
+                    logging.info(f"Loaded {len(cls._menu_entries)} existing menu entries in {len(cls._menu_categories)} categories")
             except Exception as e:
                 logging.warning(f"Could not load saved menu configuration: {e}")
 
@@ -950,8 +952,29 @@ class MenuService:
 
                 logging.info(f"Registering menu entry: {menu_id} - {menu_entry.get('title', 'No title')}")
 
+                # Parse category from plugin name structure (e.g., "vpn.wireguard" -> category="vpn", name="wireguard")
+                category = menu_entry.get("category", "")
+                plugin_full_name = menu_id.replace(f"{category}_", "") if category else menu_id
+
+                # Create hierarchical menu structure
+                processed_entry = menu_entry.copy()
+
+                # Generate proper menu title from plugin name if not explicitly set
+                if "." in plugin_full_name:
+                    # For plugins like "wireguard" in category "vpn", use just "Wireguard"
+                    plugin_name_only = plugin_full_name.split(".")[-1] if "." in plugin_full_name else plugin_full_name
+                    if processed_entry.get("title") == plugin_full_name.title():
+                        processed_entry["title"] = plugin_name_only.title()
+
                 # Store the menu entry
-                cls._menu_entries[menu_id] = menu_entry.copy()
+                cls._menu_entries[menu_id] = processed_entry
+
+                # Organize by category
+                if category not in cls._menu_categories:
+                    cls._menu_categories[category] = []
+
+                if menu_id not in cls._menu_categories[category]:
+                    cls._menu_categories[category].append(menu_id)
 
                 # Update order based on position
                 if menu_id not in cls._menu_order:
@@ -964,10 +987,17 @@ class MenuService:
                     x
                 ))
 
+                # Sort within each category by position
+                for cat_entries in cls._menu_categories.values():
+                    cat_entries.sort(key=lambda x: (
+                        cls._menu_entries[x].get("position", 999),
+                        x
+                    ))
+
                 # Save to repository
                 await cls._save_menu_configuration()
 
-                logging.info(f"✅ Menu entry '{menu_id}' registered successfully. Total entries: {len(cls._menu_entries)}")
+                logging.info(f"✅ Menu entry '{menu_id}' registered successfully in category '{category}'. Total entries: {len(cls._menu_entries)}")
                 return True
             except Exception as e:
                 logging.error(f"Failed to register menu entry: {e}")
@@ -987,6 +1017,15 @@ class MenuService:
         """
         async with cls._menu_lock:
             try:
+                # Remove from categories
+                for category, entries in cls._menu_categories.items():
+                    if menu_id in entries:
+                        entries.remove(menu_id)
+                        # Remove empty categories
+                        if not entries:
+                            del cls._menu_categories[category]
+                        break
+
                 if menu_id in cls._menu_entries:
                     del cls._menu_entries[menu_id]
 
@@ -1117,16 +1156,74 @@ class MenuService:
         ]
 
     @classmethod
+    async def get_categorized_menu_entries(cls, user_permissions: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
+        """Get menu entries organized by category with proper hierarchy.
+
+        Args:
+            user_permissions: List of user permissions to filter by
+
+        Returns:
+            Dictionary with category names as keys and category info as values:
+            {
+                "vpn": {
+                    "display_name": "VPN",
+                    "icon": "shield-lock",
+                    "entries": [list of menu entries],
+                    "position": 10
+                }
+            }
+        """
+        categorized_menus = {}
+
+        # Category display name mappings and default icons
+        category_config = {
+            "vpn": {"display_name": "VPN", "icon": "shield-lock", "position": 10},
+            "firewall": {"display_name": "Firewall", "icon": "shield-shaded", "position": 20},
+            "monitoring": {"display_name": "Monitoring", "icon": "activity", "position": 30},
+            "network": {"display_name": "Network", "icon": "network-wired", "position": 40},
+            "security": {"display_name": "Security", "icon": "shield-check", "position": 50},
+            "backup": {"display_name": "Backup", "icon": "download", "position": 60},
+            "system": {"display_name": "System", "icon": "cpu", "position": 70},
+            "logs": {"display_name": "Logs", "icon": "file-text", "position": 80},
+            "other": {"display_name": "Other", "icon": "puzzle", "position": 999}
+        }
+
+        # Get all accessible menu entries
+        all_entries = await cls.get_menu_entries(user_permissions)
+
+        for entry in all_entries:
+            category = entry.get("category", "other")
+
+            # Initialize category if not exists
+            if category not in categorized_menus:
+                config = category_config.get(category, category_config["other"])
+                categorized_menus[category] = {
+                    "display_name": config["display_name"],
+                    "icon": config["icon"],
+                    "position": config["position"],
+                    "entries": []
+                }
+
+            categorized_menus[category]["entries"].append(entry)
+
+        # Sort entries within each category by position
+        for category_info in categorized_menus.values():
+            category_info["entries"].sort(key=lambda x: (x.get("position", 999), x.get("title", "")))
+
+        return categorized_menus
+
+    @classmethod
     async def _save_menu_configuration(cls):
         """Save menu configuration to repository."""
         try:
             if cls._repository:
                 await cls._repository.set_data("menu_configuration", {
                     "entries": cls._menu_entries,
+                    "categories": cls._menu_categories,
                     "order": cls._menu_order,
                     "updated_at": datetime.utcnow().isoformat()
                 })
-                logging.debug(f"Saved menu configuration with {len(cls._menu_entries)} entries")
+                logging.debug(f"Saved menu configuration with {len(cls._menu_entries)} entries in {len(cls._menu_categories)} categories")
         except Exception as e:
             logging.error(f"Failed to save menu configuration: {e}")
 

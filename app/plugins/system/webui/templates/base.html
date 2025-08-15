@@ -163,36 +163,37 @@
                             </li>
                         </ul>
 
-                        <!-- Plugin Menu Section -->
-                        {% if plugin_menus %}
+                        <!-- Categorized Plugin Menu Sections -->
+                        {% if categorized_plugin_menus %} {% for category,
+                        category_info in categorized_plugin_menus.items() %} {%
+                        if category_info.entries %}
                         <h6
                             class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted"
                         >
-                            <span>Plugins</span>
+                            <span>
+                                <i
+                                    class="bi bi-{{ category_info.icon }} me-1"
+                                ></i>
+                                {{ category_info.display_name }}
+                            </span>
                         </h6>
                         <ul class="nav flex-column mb-2">
-                            {% for plugin_menu in plugin_menus %}
+                            {% for entry in category_info.entries %}
                             <li class="nav-item">
-                                <a
-                                    class="nav-link"
-                                    href="{{ plugin_menu.url }}"
-                                >
-                                    <i
-                                        class="bi bi-{{ plugin_menu.icon }} me-2"
-                                    ></i>
-                                    {{ plugin_menu.name }} {% if
-                                    plugin_menu.badge %}
+                                <a class="nav-link" href="{{ entry.url }}">
+                                    <i class="bi bi-{{ entry.icon }} me-2"></i>
+                                    {{ entry.title }} {% if entry.badge %}
                                     <span
-                                        class="badge bg-{{ plugin_menu.badge.style }} ms-auto"
+                                        class="badge bg-{{ entry.badge.style }} ms-auto"
                                     >
-                                        {{ plugin_menu.badge.count }}
+                                        {{ entry.badge.count }}
                                     </span>
                                     {% endif %}
                                 </a>
                             </li>
                             {% endfor %}
                         </ul>
-                        {% endif %}
+                        {% endif %} {% endfor %} {% endif %}
 
                         <h6
                             class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted"

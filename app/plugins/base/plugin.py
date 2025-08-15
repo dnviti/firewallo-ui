@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 from .exceptions import PluginError, PluginConfigurationError
+from .menu_utils import MenuHelper
 
 
 class BasePlugin(ABC):
@@ -355,6 +356,33 @@ class BasePlugin(ABC):
             self.logger.error(f"Failed to initialize WebUI for {self.name}: {e}")
             return False
 
+    def _parse_plugin_name_structure(self) -> tuple[str, str]:
+        """Parse plugin name structure to extract category and display name.
+
+        Returns:
+            tuple: (category_display_name, plugin_display_name)
+        """
+        _, category_display, plugin_display = MenuHelper.parse_plugin_name(self.name, self.category)
+        return category_display, plugin_display
+
+    def _generate_menu_id(self) -> str:
+        """Generate standardized menu ID based on plugin naming structure.
+
+        Returns:
+            str: Generated menu ID
+        """
+        menu_id, _, _ = MenuHelper.parse_plugin_name(self.name, self.category)
+        return menu_id
+
+    def _get_default_menu_title(self) -> str:
+        """Get default menu title based on plugin naming structure.
+
+        Returns:
+            str: Default menu title
+        """
+        _, _, plugin_display = MenuHelper.parse_plugin_name(self.name, self.category)
+        return plugin_display
+
     async def register_menu_entry(self) -> bool:
         """Register plugin menu entry in the main navigation.
 
@@ -373,18 +401,28 @@ class BasePlugin(ABC):
             menu_config = self.manifest.get('webui', {}).get('menu_entry', {})
             self.logger.info(f"Registering menu entry for {self.name} with config: {menu_config}")
 
-            menu_entry = {
-                'id': f"{self.category}_{self.name}",
-                'title': menu_config.get('title', self.name.title()),
-                'icon': menu_config.get('icon', 'bi-puzzle'),
-                'url': self.webui_base_path,
-                'category': self.category,
-                'position': menu_config.get('position', 999),
-                'permissions': menu_config.get('permissions', []),
-                'badge': None,
-                'active': self.enabled,
-                'visible': True
-            }
+            # Use MenuHelper to create standardized menu entry
+            menu_entry = MenuHelper.create_standard_menu_entry(
+                self.name,
+                self.category,
+                {
+                    'title': menu_config.get('title'),  # Will use default if None
+                    'icon': MenuHelper.normalize_icon(menu_config.get('icon', 'puzzle')),
+                    'url': self.webui_base_path,
+                    'position': menu_config.get('position', 50),
+                    'permissions': menu_config.get('permissions', [f'{self.category}.{self.name}.view']),
+                    'active': self.enabled
+                }
+            )
+
+            # Override title with custom config if provided, otherwise use MenuHelper default
+            if menu_config.get('title'):
+                menu_entry['title'] = menu_config['title']
+
+            # Validate menu entry structure
+            is_valid, errors = MenuHelper.validate_menu_entry(menu_entry)
+            if not is_valid:
+                self.logger.warning(f"Menu entry validation issues for {self.name}: {errors}")
 
             self.logger.info(f"Menu entry prepared for {self.name}: {menu_entry}")
 
@@ -400,7 +438,7 @@ class BasePlugin(ABC):
                 result = await MenuService.register_plugin_menu(menu_entry)
                 if result:
                     self.menu_entry_registered = True
-                    self.logger.info(f"✅ Menu entry successfully registered for {self.name}")
+                    self.logger.info(f"✅ Menu entry successfully registered for {self.name} in category {self.category}")
                     return True
                 else:
                     self.logger.error(f"❌ Menu entry registration failed for {self.name}")

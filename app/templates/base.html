@@ -186,6 +186,38 @@
                                 </a>
                             </li>
                         </ul>
+
+                        <!-- Categorized Plugin Menu Sections -->
+                        {% if categorized_plugin_menus %} {% for category,
+                        category_info in categorized_plugin_menus.items() %} {%
+                        if category_info.entries %}
+                        <h6
+                            class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted"
+                        >
+                            <span>
+                                <i
+                                    class="bi bi-{{ category_info.icon }} me-1"
+                                ></i>
+                                {{ category_info.display_name }}
+                            </span>
+                        </h6>
+                        <ul class="nav flex-column mb-2">
+                            {% for entry in category_info.entries %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ entry.url }}">
+                                    <i class="bi bi-{{ entry.icon }} me-2"></i>
+                                    {{ entry.title }} {% if entry.badge %}
+                                    <span
+                                        class="badge bg-{{ entry.badge.style }} ms-auto"
+                                    >
+                                        {{ entry.badge.count }}
+                                    </span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %} {% endfor %} {% endif %}
                     </div>
                 </nav>
 

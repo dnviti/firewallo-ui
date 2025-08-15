@@ -792,33 +792,113 @@ function editServer(serverId) {
 
 ### Menu Integration
 
+#### Hierarchical Menu System
+
+The Firewallo UI uses a hierarchical menu system that organizes plugins by category. Plugin menus are automatically structured based on the plugin naming convention:
+
+**Plugin Naming Structure**: `{category}.{plugin_name}`
+
+**Menu Structure**: 
+- **Section**: Category display name (e.g., "VPN", "Firewall")
+- **Menu Entry**: Plugin display name (e.g., "Wireguard", "IPTables")
+
+#### Supported Categories
+
+| Category | Display Name | Icon | Description |
+|----------|--------------|------|-------------|
+| `vpn` | VPN | shield-lock | Virtual Private Network services |
+| `firewall` | Firewall | shield-shaded | Firewall rules and protection |
+| `monitoring` | Monitoring | activity | System and network monitoring |
+| `network` | Network | diagram-3 | Network configuration and management |
+| `security` | Security | shield-check | Security tools and services |
+| `backup` | Backup | download | Backup and restore services |
+| `system` | System | cpu | System administration tools |
+| `logs` | Logs | file-text | Log management and analysis |
+| `other` | Other | puzzle | Miscellaneous plugins |
+
+#### Menu Entry Examples
+
+For a plugin named `vpn.wireguard`:
+- **Menu Section**: "VPN" (with shield-lock icon)
+- **Menu Entry**: "Wireguard" 
+- **URL**: `/plugins/vpn/wireguard`
+- **Menu ID**: `vpn_wireguard`
+
+For a plugin named `firewall.iptables`:
+- **Menu Section**: "Firewall" (with shield-shaded icon)
+- **Menu Entry**: "Iptables"
+- **URL**: `/plugins/firewall/iptables`
+- **Menu ID**: `firewall_iptables`
+
+#### Manifest Configuration
+
+Configure menu entries in your plugin's `manifest.json`:
+
+```json
+{
+  "name": "wireguard",
+  "category": "vpn",
+  "webui": {
+    "enabled": true,
+    "menu_entry": {
+      "title": "Wireguard",
+      "icon": "bi-shield-lock",
+      "position": 10,
+      "permissions": ["vpn.wireguard.view"]
+    }
+  }
+}
+```
+
+**Key Points**:
+- `title`: Should be just the plugin name (e.g., "Wireguard"), not the full name
+- `icon`: Use Bootstrap Icons format (`bi-icon-name`)
+- `position`: Lower numbers appear first within the category
+- `permissions`: List of required permissions to see the menu entry
+
 #### Automatic Menu Registration
 
-When a plugin with web UI is enabled, it automatically registers its menu entry in the main navigation:
+The menu system automatically handles registration using the plugin naming structure:
 
 ```python
-# In BasePlugin class
-def register_menu_entry(self):
-    """Register plugin menu entry in the main navigation."""
-    if not self.manifest.get('webui', {}).get('enabled'):
-        return
+# BasePlugin automatically calls this during initialization
+async def register_menu_entry(self) -> bool:
+    """Register plugin menu entry with hierarchical structure."""
+    # Uses MenuHelper to create standardized entry
+    menu_entry = MenuHelper.create_standard_menu_entry(
+        self.name,           # e.g., 'wireguard'
+        self.category,       # e.g., 'vpn'
+        menu_config         # from manifest.json
+    )
     
-    menu_config = self.manifest['webui']['menu_entry']
-    menu_entry = {
-        'id': f"{self.category}_{self.name}",
-        'title': menu_config.get('title', self.name),
-        'icon': menu_config.get('icon', 'bi-puzzle'),
-        'url': self.manifest['webui']['routes']['base_path'],
-        'category': self.category,
-        'position': menu_config.get('position', 999),
-        'permissions': menu_config.get('permissions', []),
-        'badge': None,  # Can be updated dynamically
-        'active': self.enabled
-    }
-    
-    # Register with menu service
-    from app.plugins.system.webui.services import MenuService
-    MenuService.register_plugin_menu(menu_entry)
+    # Result: Menu appears under "VPN" section as "Wireguard"
+    return await MenuService.register_plugin_menu(menu_entry)
+```
+
+#### Using MenuHelper Utilities
+
+For advanced menu customization, use the MenuHelper class:
+
+```python
+from app.plugins.base import MenuHelper
+
+# Parse plugin name structure
+menu_id, category_display, plugin_display = MenuHelper.parse_plugin_name('wireguard', 'vpn')
+# Result: ('vpn_wireguard', 'VPN', 'Wireguard')
+
+# Get category configuration
+category_config = MenuHelper.get_category_config('vpn')
+# Result: {'display_name': 'VPN', 'icon': 'shield-lock', 'position': 10, ...}
+
+# Create custom menu entry
+menu_entry = MenuHelper.create_standard_menu_entry(
+    plugin_name='wireguard',
+    category='vpn',
+    custom_config={'icon': 'bi-shield-plus', 'position': 5}
+)
+
+# Validate menu entry
+is_valid, errors = MenuHelper.validate_menu_entry(menu_entry)
 ```
 
 #### Dynamic Menu Updates
@@ -833,7 +913,59 @@ await self.update_menu_badge(count=5, style="danger")
 await self.set_menu_visibility(visible=False)
 
 # Update menu title
-await self.update_menu_title("WireGuard (3 active)")
+await self.update_menu_title("Wireguard (3 tunnels)")
+```
+
+#### Menu Structure Guidelines
+
+1. **Category Naming**: Use lowercase category names that match the directory structure
+2. **Plugin Naming**: Use descriptive, short plugin names 
+3. **Menu Titles**: Keep titles concise (prefer "Wireguard" over "WireGuard VPN Manager")
+4. **Icons**: Use appropriate Bootstrap Icons that relate to the plugin's function
+5. **Permissions**: Follow the pattern `{category}.{plugin_name}.{action}`
+
+#### Examples by Category
+
+**VPN Plugins**:
+```json
+{
+  "name": "wireguard",
+  "category": "vpn",
+  "webui": {
+    "menu_entry": {
+      "title": "Wireguard",
+      "icon": "bi-shield-lock"
+    }
+  }
+}
+```
+
+**Firewall Plugins**:
+```json
+{
+  "name": "iptables",
+  "category": "firewall", 
+  "webui": {
+    "menu_entry": {
+      "title": "IPTables",
+      "icon": "bi-shield-shaded"
+    }
+  }
+}
+```
+
+**Monitoring Plugins**:
+```json
+{
+  "name": "netdata",
+  "category": "monitoring",
+  "webui": {
+    "menu_entry": {
+      "title": "NetData",
+      "icon": "bi-graph-up"
+    }
+  }
+}
 ```
 
 ### Theme Management

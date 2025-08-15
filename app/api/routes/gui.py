@@ -7,6 +7,14 @@ from pathlib import Path
 from app.auth.models import current_active_user, User
 from app.auth.sessions import get_session_manager
 
+# Import navigation context helper
+try:
+    from app.plugins.system.webui.auth_deps import get_navigation_context
+except ImportError:
+    # Fallback if WebUI plugin is not available
+    async def get_navigation_context(user):
+        return {"navigation": [], "categorized_plugin_menus": {}, "user_menu": []}
+
 # Get the absolute path to the app directory
 app_dir = Path(__file__).parent.parent.parent
 templates_dir = app_dir / "templates"
@@ -46,6 +54,9 @@ async def login_page(request: Request):
 async def dashboard(request: Request, current_user: User = Depends(get_current_web_user)):
     """Serve the main dashboard"""
     try:
+        # Get navigation context for menu rendering
+        nav_context = await get_navigation_context(current_user)
+
         context = {
             "request": request,
             "page_title": "Dashboard",
@@ -55,6 +66,9 @@ async def dashboard(request: Request, current_user: User = Depends(get_current_w
                 "is_superuser": current_user.is_superuser
             }
         }
+        # Merge navigation context
+        context.update(nav_context)
+
         return templates.TemplateResponse("dashboard.html", context)
     except HTTPException as e:
         if e.status_code == status.HTTP_302_FOUND:
@@ -67,6 +81,9 @@ async def dashboard(request: Request, current_user: User = Depends(get_current_w
 async def plugins_page(request: Request, current_user: User = Depends(get_current_web_user)):
     """Serve the plugins management page"""
     try:
+        # Get navigation context for menu rendering
+        nav_context = await get_navigation_context(current_user)
+
         context = {
             "request": request,
             "page_title": "Plugin Management",
@@ -76,6 +93,9 @@ async def plugins_page(request: Request, current_user: User = Depends(get_curren
                 "is_superuser": current_user.is_superuser
             }
         }
+        # Merge navigation context
+        context.update(nav_context)
+
         return templates.TemplateResponse("plugins.html", context)
     except HTTPException as e:
         if e.status_code == status.HTTP_302_FOUND:
@@ -88,6 +108,9 @@ async def plugins_page(request: Request, current_user: User = Depends(get_curren
 async def rules_page(request: Request, current_user: User = Depends(get_current_web_user)):
     """Serve the firewall rules page"""
     try:
+        # Get navigation context for menu rendering
+        nav_context = await get_navigation_context(current_user)
+
         context = {
             "request": request,
             "page_title": "Firewall Rules",
@@ -97,6 +120,9 @@ async def rules_page(request: Request, current_user: User = Depends(get_current_
                 "is_superuser": current_user.is_superuser
             }
         }
+        # Merge navigation context
+        context.update(nav_context)
+
         # For now, use the dashboard template as placeholder
         return templates.TemplateResponse("dashboard.html", context)
     except HTTPException as e:
@@ -110,6 +136,9 @@ async def rules_page(request: Request, current_user: User = Depends(get_current_
 async def logs_page(request: Request, current_user: User = Depends(get_current_web_user)):
     """Serve the logs page"""
     try:
+        # Get navigation context for menu rendering
+        nav_context = await get_navigation_context(current_user)
+
         context = {
             "request": request,
             "page_title": "System Logs",
@@ -119,6 +148,9 @@ async def logs_page(request: Request, current_user: User = Depends(get_current_w
                 "is_superuser": current_user.is_superuser
             }
         }
+        # Merge navigation context
+        context.update(nav_context)
+
         # For now, use the dashboard template as placeholder
         return templates.TemplateResponse("dashboard.html", context)
     except HTTPException as e:
@@ -132,6 +164,9 @@ async def logs_page(request: Request, current_user: User = Depends(get_current_w
 async def firewall_status_page(request: Request, current_user: User = Depends(get_current_web_user)):
     """Serve the firewall status page"""
     try:
+        # Get navigation context for menu rendering
+        nav_context = await get_navigation_context(current_user)
+
         context = {
             "request": request,
             "page_title": "Firewall Status",
@@ -141,6 +176,9 @@ async def firewall_status_page(request: Request, current_user: User = Depends(ge
                 "is_superuser": current_user.is_superuser
             }
         }
+        # Merge navigation context
+        context.update(nav_context)
+
         return templates.TemplateResponse("dashboard.html", context)
     except HTTPException as e:
         if e.status_code == status.HTTP_302_FOUND:
@@ -153,6 +191,9 @@ async def firewall_status_page(request: Request, current_user: User = Depends(ge
 async def monitoring_page(request: Request, current_user: User = Depends(get_current_web_user)):
     """Serve the monitoring page"""
     try:
+        # Get navigation context for menu rendering
+        nav_context = await get_navigation_context(current_user)
+
         context = {
             "request": request,
             "page_title": "System Monitoring",
@@ -162,6 +203,9 @@ async def monitoring_page(request: Request, current_user: User = Depends(get_cur
                 "is_superuser": current_user.is_superuser
             }
         }
+        # Merge navigation context
+        context.update(nav_context)
+
         return templates.TemplateResponse("dashboard.html", context)
     except HTTPException as e:
         if e.status_code == status.HTTP_302_FOUND:
@@ -174,6 +218,9 @@ async def monitoring_page(request: Request, current_user: User = Depends(get_cur
 async def system_info_page(request: Request, current_user: User = Depends(get_current_web_user)):
     """Serve the system information page"""
     try:
+        # Get navigation context for menu rendering
+        nav_context = await get_navigation_context(current_user)
+
         context = {
             "request": request,
             "page_title": "System Information",
@@ -183,6 +230,9 @@ async def system_info_page(request: Request, current_user: User = Depends(get_cu
                 "is_superuser": current_user.is_superuser
             }
         }
+        # Merge navigation context
+        context.update(nav_context)
+
         return templates.TemplateResponse("dashboard.html", context)
     except HTTPException as e:
         if e.status_code == status.HTTP_302_FOUND:
@@ -195,6 +245,9 @@ async def system_info_page(request: Request, current_user: User = Depends(get_cu
 async def backup_page(request: Request, current_user: User = Depends(get_current_web_user)):
     """Serve the backup page"""
     try:
+        # Get navigation context for menu rendering
+        nav_context = await get_navigation_context(current_user)
+
         context = {
             "request": request,
             "page_title": "Backup & Restore",
@@ -204,6 +257,9 @@ async def backup_page(request: Request, current_user: User = Depends(get_current
                 "is_superuser": current_user.is_superuser
             }
         }
+        # Merge navigation context
+        context.update(nav_context)
+
         return templates.TemplateResponse("dashboard.html", context)
     except HTTPException as e:
         if e.status_code == status.HTTP_302_FOUND:

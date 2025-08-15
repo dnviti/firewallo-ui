@@ -270,8 +270,8 @@ async def get_navigation_context(user: User) -> Dict[str, Any]:
         if can_access_section(user, section["id"])
     ]
 
-    # Get plugin menu entries
-    plugin_menus = []
+    # Get categorized plugin menu entries
+    categorized_plugin_menus = {}
     try:
         from .services import MenuService
         import logging
@@ -307,22 +307,19 @@ async def get_navigation_context(user: User) -> Dict[str, Any]:
                 user_permissions = ['vpn.*', 'firewall.*', 'monitoring.*', 'network.*', 'admin.*']
                 logger.info("Admin role detected - using default admin permissions")
 
-        # Get plugin menu entries
-        plugin_entries = await MenuService.get_menu_entries(user_permissions)
-        logger.info(f"Retrieved {len(plugin_entries)} plugin menu entries")
+        # Get categorized plugin menu entries
+        categorized_plugin_menus = await MenuService.get_categorized_menu_entries(user_permissions)
+        logger.info(f"Retrieved {len(categorized_plugin_menus)} plugin menu categories")
 
-        # Convert plugin entries to navigation format
-        for entry in plugin_entries:
-            plugin_menu = {
-                "id": entry.get("id", ""),
-                "name": entry.get("title", ""),
-                "icon": entry.get("icon", "puzzle").replace("bi-", ""),
-                "url": entry.get("url", ""),
-                "category": entry.get("category", ""),
-                "badge": entry.get("badge")
-            }
-            plugin_menus.append(plugin_menu)
-            logger.debug(f"Added plugin menu: {plugin_menu['name']} -> {plugin_menu['url']}")
+        # Convert entries to navigation format
+        for category, category_info in categorized_plugin_menus.items():
+            for entry in category_info["entries"]:
+                # Process icon to remove bi- prefix if present
+                icon = entry.get("icon", "puzzle")
+                if icon.startswith("bi-"):
+                    icon = icon[3:]
+                entry["icon"] = icon
+            logger.debug(f"Category '{category_info['display_name']}': {len(category_info['entries'])} entries")
 
     except ImportError as e:
         # MenuService not available - WebUI plugin may not be loaded
@@ -335,7 +332,7 @@ async def get_navigation_context(user: User) -> Dict[str, Any]:
 
     return {
         "navigation": accessible_sections,
-        "plugin_menus": plugin_menus,
+        "categorized_plugin_menus": categorized_plugin_menus,
         "user_menu": [
             {"name": "Profile", "url": "/profile", "icon": "person"},
             {"name": "Settings", "url": "/settings", "icon": "gear"} if can_access_section(user, "settings") else None,

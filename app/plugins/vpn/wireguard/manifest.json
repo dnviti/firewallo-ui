@@ -67,7 +67,7 @@
   "webui": {
     "enabled": true,
     "menu_entry": {
-      "title": "WireGuard VPN",
+      "title": "Wireguard",
       "icon": "bi-shield-lock",
       "category": "vpn",
       "position": 10,
