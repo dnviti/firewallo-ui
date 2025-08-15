@@ -352,7 +352,7 @@ firewallo-ui/
 ## Configuration
 
 ### Default Credentials
-- **Username**: `admin`
+- **Username**: `admin@firewallo.io`
 - **Password**: `admin`
 - **Email**: `admin@firewallo.io`
 

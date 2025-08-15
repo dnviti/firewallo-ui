@@ -876,6 +876,254 @@ class MetricsCollector:
         return summary
 
 
+class MenuService:
+    """Service for managing plugin menu entries in the navigation."""
+
+    # Class-level storage for menu entries
+    _menu_entries: Dict[str, Dict[str, Any]] = {}
+    _menu_order: List[str] = []
+    _menu_lock = asyncio.Lock()
+    _repository = None
+    _initialized = False
+
+    @classmethod
+    async def initialize(cls):
+        """Initialize the menu service."""
+        if cls._initialized:
+            return
+
+        try:
+            from app.plugins.base import BaseRepository
+            cls._repository = BaseRepository(plugin_name="webui", category="system")
+
+            # Load saved menu configuration
+            try:
+                saved_menu = await cls._repository.get_data("menu_configuration")
+                if saved_menu:
+                    cls._menu_entries = saved_menu.get("entries", {})
+                    cls._menu_order = saved_menu.get("order", [])
+                    logging.info(f"Loaded {len(cls._menu_entries)} existing menu entries")
+            except Exception as e:
+                logging.warning(f"Could not load saved menu configuration: {e}")
+
+            cls._initialized = True
+            logging.info("MenuService initialized successfully")
+        except Exception as e:
+            logging.error(f"MenuService initialization failed: {e}")
+
+    @classmethod
+    async def register_plugin_menu(cls, menu_entry: Dict[str, Any]) -> bool:
+        """Register a plugin menu entry.
+
+        Args:
+            menu_entry: Dictionary containing menu configuration
+                - id: Unique identifier for the menu entry
+                - title: Display title
+                - icon: Bootstrap icon class
+                - url: URL path for the menu item
+                - category: Plugin category
+                - position: Sort position (lower = higher)
+                - permissions: Required permissions
+                - badge: Optional badge info
+                - active: Whether the entry is active
+
+        Returns:
+            bool: True if registration was successful
+        """
+        # Ensure initialization
+        if not cls._initialized:
+            await cls.initialize()
+
+        async with cls._menu_lock:
+            try:
+                menu_id = menu_entry.get("id")
+                if not menu_id:
+                    logging.error("Menu entry registration failed: no ID provided")
+                    return False
+
+                logging.info(f"Registering menu entry: {menu_id} - {menu_entry.get('title', 'No title')}")
+
+                # Store the menu entry
+                cls._menu_entries[menu_id] = menu_entry.copy()
+
+                # Update order based on position
+                if menu_id not in cls._menu_order:
+                    cls._menu_order.append(menu_id)
+
+                # Sort by position and category
+                cls._menu_order.sort(key=lambda x: (
+                    cls._menu_entries[x].get("category", "zzz"),
+                    cls._menu_entries[x].get("position", 999),
+                    x
+                ))
+
+                # Save to repository
+                await cls._save_menu_configuration()
+
+                logging.info(f"✅ Menu entry '{menu_id}' registered successfully. Total entries: {len(cls._menu_entries)}")
+                return True
+            except Exception as e:
+                logging.error(f"Failed to register menu entry: {e}")
+                import traceback
+                traceback.print_exc()
+                return False
+
+    @classmethod
+    async def unregister_plugin_menu(cls, menu_id: str) -> bool:
+        """Unregister a plugin menu entry.
+
+        Args:
+            menu_id: The menu entry ID to remove
+
+        Returns:
+            bool: True if unregistration was successful
+        """
+        async with cls._menu_lock:
+            try:
+                if menu_id in cls._menu_entries:
+                    del cls._menu_entries[menu_id]
+
+                if menu_id in cls._menu_order:
+                    cls._menu_order.remove(menu_id)
+
+                await cls._save_menu_configuration()
+                return True
+            except Exception as e:
+                logging.error(f"Failed to unregister menu entry: {e}")
+                return False
+
+    @classmethod
+    async def update_badge(cls, menu_id: str, count: Optional[int] = None, style: str = "primary") -> bool:
+        """Update the badge for a menu entry.
+
+        Args:
+            menu_id: The menu entry ID
+            count: Badge count (None removes the badge)
+            style: Bootstrap badge style
+
+        Returns:
+            bool: True if update was successful
+        """
+        async with cls._menu_lock:
+            if menu_id not in cls._menu_entries:
+                return False
+
+            if count is None:
+                cls._menu_entries[menu_id]["badge"] = None
+            else:
+                cls._menu_entries[menu_id]["badge"] = {
+                    "count": count,
+                    "style": style
+                }
+
+            await cls._save_menu_configuration()
+            return True
+
+    @classmethod
+    async def set_visibility(cls, menu_id: str, visible: bool) -> bool:
+        """Set the visibility of a menu entry.
+
+        Args:
+            menu_id: The menu entry ID
+            visible: Whether the menu should be visible
+
+        Returns:
+            bool: True if update was successful
+        """
+        async with cls._menu_lock:
+            if menu_id not in cls._menu_entries:
+                return False
+
+            cls._menu_entries[menu_id]["visible"] = visible
+            await cls._save_menu_configuration()
+            return True
+
+    @classmethod
+    async def update_title(cls, menu_id: str, title: str) -> bool:
+        """Update the title of a menu entry.
+
+        Args:
+            menu_id: The menu entry ID
+            title: New title for the menu entry
+
+        Returns:
+            bool: True if update was successful
+        """
+        async with cls._menu_lock:
+            if menu_id not in cls._menu_entries:
+                return False
+
+            cls._menu_entries[menu_id]["title"] = title
+            await cls._save_menu_configuration()
+            return True
+
+    @classmethod
+    async def get_menu_entries(cls, user_permissions: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+        """Get all menu entries filtered by user permissions.
+
+        Args:
+            user_permissions: List of user permissions to filter by
+
+        Returns:
+            List of menu entries the user has access to
+        """
+        menu_items = []
+
+        for menu_id in cls._menu_order:
+            entry = cls._menu_entries.get(menu_id)
+            if not entry:
+                continue
+
+            # Check if entry is visible
+            if not entry.get("visible", True):
+                continue
+
+            # Check if entry is active
+            if not entry.get("active", True):
+                continue
+
+            # Check permissions if provided
+            if user_permissions is not None:
+                required_perms = entry.get("permissions", [])
+                if required_perms:
+                    # Check if user has at least one required permission
+                    if not any(perm in user_permissions for perm in required_perms):
+                        continue
+
+            menu_items.append(entry.copy())
+
+        return menu_items
+
+    @classmethod
+    async def get_menu_by_category(cls, category: str) -> List[Dict[str, Any]]:
+        """Get menu entries for a specific category.
+
+        Args:
+            category: Plugin category to filter by
+
+        Returns:
+            List of menu entries in the category
+        """
+        return [
+            entry.copy() for menu_id in cls._menu_order
+            if (entry := cls._menu_entries.get(menu_id)) and entry.get("category") == category
+        ]
+
+    @classmethod
+    async def _save_menu_configuration(cls):
+        """Save menu configuration to repository."""
+        try:
+            if cls._repository:
+                await cls._repository.set_data("menu_configuration", {
+                    "entries": cls._menu_entries,
+                    "order": cls._menu_order,
+                    "updated_at": datetime.utcnow().isoformat()
+                })
+                logging.debug(f"Saved menu configuration with {len(cls._menu_entries)} entries")
+        except Exception as e:
+            logging.error(f"Failed to save menu configuration: {e}")
+
+
 # Export all service classes
 __all__ = [
     "TemplateService",

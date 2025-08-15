@@ -556,6 +556,550 @@ async def create_client(
         )
 ```
 
+## Web UI Management
+
+### Overview
+
+The Firewallo Plugin Framework provides comprehensive web UI management capabilities, allowing plugins to create their own web interfaces that integrate seamlessly with the main application. Each plugin can manage its own UI pages, navigation entries, and themes while maintaining consistency with the overall system design.
+
+### Web UI Architecture
+
+#### Plugin UI Structure
+
+```
+<plugin_directory>/
+├── plugin.py                  # Main plugin implementation
+├── manifest.json              # Plugin metadata
+├── webui/                     # Web UI resources
+│   ├── routes.py             # Web route handlers
+│   ├── templates/            # HTML templates
+│   │   ├── base.html        # Plugin base template
+│   │   ├── index.html       # Plugin main page
+│   │   └── settings.html    # Plugin settings page
+│   ├── static/              # Static resources
+│   │   ├── css/            # Plugin-specific CSS
+│   │   ├── js/             # Plugin-specific JavaScript
+│   │   └── img/            # Plugin images
+│   └── menu.json           # Menu configuration
+└── api/                      # API endpoints
+    └── routes.py            # API route handlers
+```
+
+### Implementing Plugin Web UI
+
+#### 1. Define Web UI Configuration in Manifest
+
+```json
+{
+  "name": "wireguard",
+  "category": "vpn",
+  "version": "1.0.0",
+  "webui": {
+    "enabled": true,
+    "menu_entry": {
+      "title": "WireGuard VPN",
+      "icon": "bi-shield-lock",
+      "category": "vpn",
+      "position": 10,
+      "permissions": ["vpn.wireguard.view"]
+    },
+    "routes": {
+      "base_path": "/plugins/vpn/wireguard",
+      "use_system_theme": true,
+      "custom_theme": null
+    },
+    "static_path": "webui/static",
+    "template_path": "webui/templates"
+  }
+}
+```
+
+#### 2. Create Web Routes Handler
+
+```python
+# webui/routes.py
+from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pathlib import Path
+
+class PluginWebUI:
+    """Web UI handler for the plugin."""
+    
+    def __init__(self, plugin):
+        self.plugin = plugin
+        self.router = APIRouter()
+        
+        # Setup templates
+        template_dir = Path(__file__).parent / "templates"
+        self.templates = Jinja2Templates(directory=str(template_dir))
+        
+        # Register routes
+        self._setup_routes()
+    
+    def _setup_routes(self):
+        """Setup web UI routes."""
+        
+        @self.router.get("/", response_class=HTMLResponse)
+        async def plugin_index(request: Request):
+            """Plugin main page."""
+            return self.templates.TemplateResponse(
+                "index.html",
+                {
+                    "request": request,
+                    "plugin": self.plugin.get_info(),
+                    "servers": await self.plugin.list_servers()
+                }
+            )
+        
+        @self.router.get("/settings", response_class=HTMLResponse)
+        async def plugin_settings(request: Request):
+            """Plugin settings page."""
+            return self.templates.TemplateResponse(
+                "settings.html",
+                {
+                    "request": request,
+                    "plugin": self.plugin.get_info(),
+                    "config": self.plugin.get_config()
+                }
+            )
+```
+
+#### 3. Implement Plugin Templates
+
+##### Base Template (Extending System Theme)
+
+```html
+<!-- webui/templates/base.html -->
+{% extends "system/base.html" %}
+
+{% block plugin_name %}{{ plugin.display_name }}{% endblock %}
+
+{% block plugin_nav %}
+<ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+        <a class="nav-link {% if request.url.path.endswith('/') %}active{% endif %}" 
+           href="{{ plugin.webui.base_path }}/">
+            <i class="bi bi-house"></i> Overview
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if 'servers' in request.url.path %}active{% endif %}" 
+           href="{{ plugin.webui.base_path }}/servers">
+            <i class="bi bi-server"></i> Servers
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if 'clients' in request.url.path %}active{% endif %}" 
+           href="{{ plugin.webui.base_path }}/clients">
+            <i class="bi bi-people"></i> Clients
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if 'settings' in request.url.path %}active{% endif %}" 
+           href="{{ plugin.webui.base_path }}/settings">
+            <i class="bi bi-gear"></i> Settings
+        </a>
+    </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<!-- Plugin content goes here -->
+{% endblock %}
+```
+
+##### Plugin Main Page
+
+```html
+<!-- webui/templates/index.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ plugin.display_name }} - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1>{{ plugin.display_name }}</h1>
+            <p class="text-muted">{{ plugin.description }}</p>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Active Servers</h5>
+                    <h2 class="text-primary">{{ servers|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <!-- More dashboard widgets -->
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Server List</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Endpoint</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for server in servers %}
+                            <tr>
+                                <td>{{ server.name }}</td>
+                                <td>{{ server.endpoint }}:{{ server.port }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if server.enabled else 'secondary' }}">
+                                        {{ 'Active' if server.enabled else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" 
+                                            onclick="editServer('{{ server.id }}')">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function editServer(serverId) {
+    window.location.href = `{{ plugin.webui.base_path }}/servers/${serverId}/edit`;
+}
+</script>
+{% endblock %}
+```
+
+### Menu Integration
+
+#### Automatic Menu Registration
+
+When a plugin with web UI is enabled, it automatically registers its menu entry in the main navigation:
+
+```python
+# In BasePlugin class
+def register_menu_entry(self):
+    """Register plugin menu entry in the main navigation."""
+    if not self.manifest.get('webui', {}).get('enabled'):
+        return
+    
+    menu_config = self.manifest['webui']['menu_entry']
+    menu_entry = {
+        'id': f"{self.category}_{self.name}",
+        'title': menu_config.get('title', self.name),
+        'icon': menu_config.get('icon', 'bi-puzzle'),
+        'url': self.manifest['webui']['routes']['base_path'],
+        'category': self.category,
+        'position': menu_config.get('position', 999),
+        'permissions': menu_config.get('permissions', []),
+        'badge': None,  # Can be updated dynamically
+        'active': self.enabled
+    }
+    
+    # Register with menu service
+    from app.plugins.system.webui.services import MenuService
+    MenuService.register_plugin_menu(menu_entry)
+```
+
+#### Dynamic Menu Updates
+
+Plugins can update their menu entries dynamically:
+
+```python
+# Update badge count
+await self.update_menu_badge(count=5, style="danger")
+
+# Update menu visibility
+await self.set_menu_visibility(visible=False)
+
+# Update menu title
+await self.update_menu_title("WireGuard (3 active)")
+```
+
+### Theme Management
+
+#### Using System Theme
+
+By default, plugins use the system theme for consistency:
+
+```python
+class PluginWebUI:
+    def __init__(self, plugin):
+        # Inherit system theme
+        self.use_system_theme = plugin.manifest['webui']['routes'].get('use_system_theme', True)
+        
+        if self.use_system_theme:
+            # Use system templates as base
+            self.base_template_path = "system/base.html"
+        else:
+            # Use custom theme
+            self.base_template_path = "custom_base.html"
+```
+
+#### Custom Theme Support
+
+Plugins can implement their own themes:
+
+```python
+# webui/theme.py
+class CustomTheme:
+    """Custom theme for the plugin."""
+    
+    def __init__(self):
+        self.name = "wireguard-dark"
+        self.primary_color = "#00b4d8"
+        self.secondary_color = "#0077b6"
+        self.styles = {
+            "navbar": "bg-dark navbar-dark",
+            "sidebar": "bg-dark text-light",
+            "card": "bg-dark text-light"
+        }
+    
+    def get_css(self):
+        """Return custom CSS."""
+        return """
+        .plugin-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        /* Custom styles */
+        """
+```
+
+### Standalone Access
+
+Plugins remain accessible even when the main WebUI is disabled:
+
+```python
+# Plugin routes are registered independently
+@app.on_event("startup")
+async def register_plugin_webui():
+    """Register plugin web UI routes."""
+    for plugin in plugin_manager.get_enabled_plugins():
+        if hasattr(plugin, 'webui_router'):
+            # Register at plugin-specific path
+            app.include_router(
+                plugin.webui_router,
+                prefix=f"/plugins/{plugin.category}/{plugin.name}"
+            )
+```
+
+### WebUI Lifecycle Management
+
+#### Plugin WebUI Initialization
+
+```python
+class BasePlugin:
+    async def initialize_webui(self):
+        """Initialize plugin web UI components."""
+        if not self.manifest.get('webui', {}).get('enabled'):
+            return
+        
+        try:
+            # Import and initialize WebUI handler
+            from .webui.routes import PluginWebUI
+            self.webui_handler = PluginWebUI(self)
+            self.webui_router = self.webui_handler.router
+            
+            # Register menu entry
+            self.register_menu_entry()
+            
+            # Mount static files
+            self.mount_static_files()
+            
+            self.logger.info(f"WebUI initialized for {self.name}")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize WebUI: {e}")
+            return False
+```
+
+#### Static File Handling
+
+```python
+def mount_static_files(self):
+    """Mount plugin static files."""
+    static_path = Path(__file__).parent / self.manifest['webui']['static_path']
+    if static_path.exists():
+        from fastapi.staticfiles import StaticFiles
+        app.mount(
+            f"/plugins/{self.category}/{self.name}/static",
+            StaticFiles(directory=str(static_path)),
+            name=f"{self.name}_static"
+        )
+```
+
+### WebUI API Integration
+
+#### Frontend-Backend Communication
+
+```javascript
+// Plugin frontend API client
+class PluginAPI {
+    constructor(pluginPath) {
+        this.basePath = `/api${pluginPath}`;
+    }
+    
+    async getServers() {
+        const response = await fetch(`${this.basePath}/servers`);
+        return response.json();
+    }
+    
+    async createServer(data) {
+        const response = await fetch(`${this.basePath}/servers`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        return response.json();
+    }
+    
+    // Real-time updates via WebSocket
+    connectWebSocket() {
+        const ws = new WebSocket(`ws://${window.location.host}${this.basePath}/ws`);
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            this.handleUpdate(data);
+        };
+        return ws;
+    }
+}
+```
+
+### Security and Permissions
+
+#### WebUI Access Control
+
+```python
+from app.plugins.system.webui.auth_deps import require_web_auth, check_permission
+
+@router.get("/admin", dependencies=[Depends(require_web_auth)])
+async def admin_page(
+    request: Request,
+    user: User = Depends(check_permission("vpn.wireguard.admin"))
+):
+    """Admin page with permission check."""
+    return templates.TemplateResponse("admin.html", {
+        "request": request,
+        "user": user
+    })
+```
+
+#### CSRF Protection
+
+```python
+from fastapi_csrf_protect import CsrfProtect
+
+@router.post("/settings")
+async def update_settings(
+    request: Request,
+    csrf_protect: CsrfProtect = Depends()
+):
+    """Update settings with CSRF protection."""
+    await csrf_protect.validate_csrf(request)
+    # Process settings update
+```
+
+### Best Practices for Plugin WebUI
+
+1. **Responsive Design**: Ensure UI works on all device sizes
+2. **Lazy Loading**: Load resources only when needed
+3. **Error Handling**: Provide clear error messages and recovery options
+4. **Accessibility**: Follow WCAG guidelines for accessibility
+5. **Performance**: Optimize assets and minimize HTTP requests
+6. **Internationalization**: Support multiple languages
+7. **Theme Consistency**: Match the main application's look and feel
+8. **Progressive Enhancement**: Ensure basic functionality without JavaScript
+
+### Example: Complete WireGuard Plugin WebUI
+
+```python
+# app/plugins/vpn/wireguard/webui/routes.py
+from fastapi import APIRouter, Request, Depends, HTTPException
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
+from pathlib import Path
+
+class WireGuardWebUI:
+    """WireGuard plugin web UI implementation."""
+    
+    def __init__(self, plugin):
+        self.plugin = plugin
+        self.router = APIRouter()
+        self.templates = Jinja2Templates(
+            directory=str(Path(__file__).parent / "templates")
+        )
+        self._setup_routes()
+    
+    def _setup_routes(self):
+        @self.router.get("/", response_class=HTMLResponse)
+        async def dashboard(request: Request):
+            servers = await self.plugin.list_servers()
+            stats = await self.plugin.get_statistics()
+            
+            return self.templates.TemplateResponse("dashboard.html", {
+                "request": request,
+                "plugin": self.plugin.get_info(),
+                "servers": servers,
+                "stats": stats,
+                "menu_context": await self._get_menu_context()
+            })
+        
+        @self.router.get("/servers/{server_id}", response_class=HTMLResponse)
+        async def server_detail(request: Request, server_id: str):
+            server = await self.plugin.get_server(server_id)
+            clients = await self.plugin.list_clients(server_id=server_id)
+            
+            return self.templates.TemplateResponse("server_detail.html", {
+                "request": request,
+                "server": server,
+                "clients": clients,
+                "plugin": self.plugin.get_info()
+            })
+        
+        @self.router.post("/servers/{server_id}/toggle")
+        async def toggle_server(server_id: str):
+            server = await self.plugin.get_server(server_id)
+            if server.enabled:
+                await self.plugin.disable_server(server_id)
+            else:
+                await self.plugin.enable_server(server_id)
+            return JSONResponse({"success": True})
+    
+    async def _get_menu_context(self):
+        """Get menu context for navigation."""
+        return {
+            "plugin_path": f"/plugins/{self.plugin.category}/{self.plugin.name}",
+            "category": self.plugin.category,
+            "items": [
+                {"title": "Dashboard", "url": "/", "icon": "bi-speedometer2"},
+                {"title": "Servers", "url": "/servers", "icon": "bi-server"},
+                {"title": "Clients", "url": "/clients", "icon": "bi-people"},
+                {"title": "Settings", "url": "/settings", "icon": "bi-gear"}
+            ]
+        }
+```
+
 ## Data Schemas
 
 ### Pydantic Models

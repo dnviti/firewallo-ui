@@ -138,7 +138,7 @@ http://your-firewallo-ip:8080
 ```
 
 Default credentials:
-- Username: `admin`
+- Username: `admin@firewallo.io`
 - Password: `admin` (change immediately after first login)
 
 ### Navigation

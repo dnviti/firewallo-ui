@@ -59,9 +59,33 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
         self.author = "Firewallo Team"
         self.license = "MIT"
 
+        # Load manifest
+        import json
+        manifest_path = Path(__file__).parent / "manifest.json"
+        if manifest_path.exists():
+            with open(manifest_path, 'r') as f:
+                manifest = json.load(f)
+                self.set_manifest(manifest)
+
         self.repository = WireGuardRepository()
         self.router = APIRouter(prefix="/wireguard", tags=["wireguard"])
         self._setup_routes()
+
+        # Initialize WebUI if configured
+        if self.webui_enabled:
+            self._initialize_webui()
+            self.logger.info(f"WebUI initialization completed for {self.name}")
+
+    def _initialize_webui(self):
+        """Initialize WebUI components."""
+        try:
+            from .webui.routes import WireGuardWebUI
+            self.webui_handler = WireGuardWebUI(self)
+            self.webui_router = self.webui_handler.router
+            self.logger.info("WireGuard WebUI initialized")
+        except ImportError as e:
+            self.logger.warning(f"Could not initialize WebUI: {e}")
+            self.webui_router = None
 
     async def initialize(self) -> bool:
         """Initialize the WireGuard plugin."""
@@ -88,6 +112,18 @@ class WireGuardPlugin(BasePlugin, VPNPluginInterface):
             current_config = await self.repository.get_config()
             if not current_config:
                 await self.repository.set_config("default", default_config)
+
+            # Mark as initialized
+            self.mark_initialized()
+
+            # Force menu registration
+            if self.webui_enabled:
+                try:
+                    import asyncio
+                    await self.register_menu_entry()
+                    self.logger.info("Menu registration completed during initialization")
+                except Exception as e:
+                    self.logger.error(f"Menu registration failed during initialization: {e}")
 
             self.logger.info("WireGuard plugin initialized successfully")
             return True

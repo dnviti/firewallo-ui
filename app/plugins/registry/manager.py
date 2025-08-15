@@ -258,6 +258,14 @@ class PluginManager:
             plugin.enabled = True
             self.enabled_plugins.add(plugin_path)
 
+            # Re-register menu entry if the plugin has WebUI capabilities
+            if hasattr(plugin, 'register_menu_entry'):
+                try:
+                    await plugin.register_menu_entry()
+                    self.logger.info(f"Menu entry registered for plugin: {plugin_path}")
+                except Exception as menu_error:
+                    self.logger.warning(f"Failed to register menu entry for {plugin_path}: {menu_error}")
+
             self.logger.info(f"Enabled plugin: {plugin_path}")
             return True
 
@@ -285,6 +293,15 @@ class PluginManager:
 
         try:
             plugin = self.plugins[plugin_path]
+
+            # Unregister menu entry if the plugin has WebUI capabilities
+            if hasattr(plugin, 'unregister_menu_entry'):
+                try:
+                    await plugin.unregister_menu_entry()
+                    self.logger.info(f"Menu entry unregistered for plugin: {plugin_path}")
+                except Exception as menu_error:
+                    self.logger.warning(f"Failed to unregister menu entry for {plugin_path}: {menu_error}")
+
             plugin.enabled = False
             self.enabled_plugins.discard(plugin_path)
 

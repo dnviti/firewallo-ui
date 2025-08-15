@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WireGuard VPN - Test Page</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h1 class="h3 mb-0">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            WireGuard VPN Plugin
+                        </h1>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success" role="alert">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Success!</strong> WireGuard Plugin WebUI is working correctly.
+                        </div>
+
+                        <h4>Plugin Information</h4>
+                        <table class="table table-striped">
+                            <tr>
+                                <td><strong>Plugin Name:</strong></td>
+                                <td>{{ plugin.name if plugin else 'WireGuard' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Category:</strong></td>
+                                <td>{{ plugin.category if plugin else 'VPN' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Version:</strong></td>
+                                <td>{{ plugin.version if plugin else '1.0.0' }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Description:</strong></td>
+                                <td>{{ plugin.description if plugin else 'Modern VPN implementation' }}</td>
+                            </tr>
+                        </table>
+
+                        <h4>Statistics</h4>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-server fs-1 text-primary"></i>
+                                        <h5></h5>{{ stats.total_servers if stats else '0' }}</h5>
+                                        <small class="text-muted">Total Servers</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-check-circle fs-1 text-success"></i>
+                                        <h5>{{ stats.active_servers if stats else '0' }}</h5>
+                                        <small class="text-muted">Active Servers</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-people fs-1 text-info"></i>
+                                        <h5>{{ stats.total_clients if stats else '0' }}</h5>
+                                        <small class="text-muted">Total Clients</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-link-45deg fs-1 text-warning"></i>
+                                        <h5>{{ stats.active_connections if stats else '0' }}</h5>
+                                        <small class="text-muted">Connections</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h4>Quick Actions</h4>
+                            <a href="{{ menu_context.plugin_path if menu_context else '/plugins/vpn/wireguard' }}/servers" class="btn btn-primary me-2">
+                                <i class="bi bi-server me-1"></i> Manage Servers
+                            </a>
+                            <a href="{{ menu_context.plugin_path if menu_context else '/plugins/vpn/wireguard' }}/clients" class="btn btn-secondary me-2">
+                                <i class="bi bi-people me-1"></i> Manage Clients
+                            </a>
+                            <a href="{{ menu_context.plugin_path if menu_context else '/plugins/vpn/wireguard' }}/settings" class="btn btn-outline-secondary">
+                                <i class="bi bi-gear me-1"></i> Settings
+                            </a>
+                        </div>
+
+                        <div class="mt-4">
+                            <h4>Navigation Context</h4>
+                            <p></p><strong>Plugin Path:</strong> {{ menu_context.plugin_path if menu_context else 'Not available' }}</p>
+                            <p><strong>User:</strong> {{ user.username if user else 'Not authenticated' }}</p>
+                        </div>
+
+                        <div class="mt-4">
+                            <h4>Implementation Status</h4>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Plugin WebUI Framework
+                                    <span class="badge bg-success rounded-pill">✓ Working</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Route Registration
+                                    <span class="badge bg-success rounded-pill">✓ Working</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Template Rendering
+                                    <span class="badge bg-success rounded-pill">✓ Working</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Authentication Integration
+                                    <span class="badge bg-success rounded-pill">✓ Working</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Menu Integration
+                                    <span class="badge bg-warning rounded-pill">⚠ Pending</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted">
+                        <small>WireGuard Plugin WebUI - Firewallo Plugin Framework</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -270,8 +270,72 @@ async def get_navigation_context(user: User) -> Dict[str, Any]:
         if can_access_section(user, section["id"])
     ]
 
+    # Get plugin menu entries
+    plugin_menus = []
+    try:
+        from .services import MenuService
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # Initialize MenuService if needed
+        if not getattr(MenuService, '_initialized', False):
+            await MenuService.initialize()
+            logger.info("MenuService initialized for navigation context")
+
+        # Get user permissions for filtering
+        user_permissions = []
+
+        # If user is superuser, pass None to get all menu entries
+        if getattr(user, 'is_superuser', False):
+            user_permissions = None
+            logger.info("Super user detected - showing all plugin menus")
+        else:
+            # Get specific permissions for regular users
+            if hasattr(user, 'permissions'):
+                user_permissions = user.permissions
+            elif hasattr(user, 'username'):
+                # Get permissions from RBAC if available
+                try:
+                    rbac = get_rbac_manager()
+                    user_permissions = rbac.get_user_permissions(user.username)
+                except Exception as rbac_error:
+                    logger.debug(f"Could not get RBAC permissions: {rbac_error}")
+                    user_permissions = []
+
+            # If no permissions found, try some common admin permissions
+            if not user_permissions and getattr(user, 'role', '') == 'admin':
+                user_permissions = ['vpn.*', 'firewall.*', 'monitoring.*', 'network.*', 'admin.*']
+                logger.info("Admin role detected - using default admin permissions")
+
+        # Get plugin menu entries
+        plugin_entries = await MenuService.get_menu_entries(user_permissions)
+        logger.info(f"Retrieved {len(plugin_entries)} plugin menu entries")
+
+        # Convert plugin entries to navigation format
+        for entry in plugin_entries:
+            plugin_menu = {
+                "id": entry.get("id", ""),
+                "name": entry.get("title", ""),
+                "icon": entry.get("icon", "puzzle").replace("bi-", ""),
+                "url": entry.get("url", ""),
+                "category": entry.get("category", ""),
+                "badge": entry.get("badge")
+            }
+            plugin_menus.append(plugin_menu)
+            logger.debug(f"Added plugin menu: {plugin_menu['name']} -> {plugin_menu['url']}")
+
+    except ImportError as e:
+        # MenuService not available - WebUI plugin may not be loaded
+        import logging
+        logging.debug(f"MenuService not available: {e}")
+    except Exception as e:
+        # Log other errors but don't break navigation
+        import logging
+        logging.error(f"Error retrieving plugin menus: {e}")
+
     return {
         "navigation": accessible_sections,
+        "plugin_menus": plugin_menus,
         "user_menu": [
             {"name": "Profile", "url": "/profile", "icon": "person"},
             {"name": "Settings", "url": "/settings", "icon": "gear"} if can_access_section(user, "settings") else None,

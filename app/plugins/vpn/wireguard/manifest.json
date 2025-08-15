@@ -19,11 +19,7 @@
       "pillow>=8.0.0",
       "ipaddress>=1.0.0"
     ],
-    "system": [
-      "wireguard-tools",
-      "iptables",
-      "ip"
-    ]
+    "system": ["wireguard-tools", "iptables", "ip"]
   },
   "permissions": [
     "network.create",
@@ -33,10 +29,7 @@
     "file.write"
   ],
   "configuration": {
-    "required": [
-      "interface_name",
-      "listen_port"
-    ],
+    "required": ["interface_name", "listen_port"],
     "optional": [
       "private_key",
       "public_key",
@@ -55,13 +48,7 @@
   "supports_hot_reload": true,
   "min_firewallo_version": "1.0.0",
   "max_firewallo_version": "2.0.0",
-  "tags": [
-    "vpn",
-    "wireguard",
-    "security",
-    "networking",
-    "encryption"
-  ],
+  "tags": ["vpn", "wireguard", "security", "networking", "encryption"],
   "icon": "wireguard-icon.svg",
   "screenshots": [
     "screenshots/servers.png",
@@ -77,6 +64,23 @@
     "Traffic statistics",
     "Multi-server support"
   ],
+  "webui": {
+    "enabled": true,
+    "menu_entry": {
+      "title": "WireGuard VPN",
+      "icon": "bi-shield-lock",
+      "category": "vpn",
+      "position": 10,
+      "permissions": ["vpn.wireguard.view"]
+    },
+    "routes": {
+      "base_path": "/plugins/vpn/wireguard",
+      "use_system_theme": true,
+      "custom_theme": null
+    },
+    "static_path": "webui/static",
+    "template_path": "webui/templates"
+  },
   "platform_support": {
     "linux": true,
     "windows": false,
